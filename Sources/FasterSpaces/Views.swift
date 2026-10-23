@@ -344,7 +344,8 @@ struct OnboardingView: View {
     let onOpenSettings: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
+        ScrollView {
+            VStack(spacing: 0) {
             VStack(spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -427,11 +428,13 @@ struct OnboardingView: View {
                 }
                 .padding(.horizontal, 2)
             }
-            .padding(.horizontal, 28)
-            .padding(.bottom, 24)
+                .padding(.horizontal, 28)
+                .padding(.bottom, 24)
+            }
+            .frame(maxWidth: .infinity)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .frame(width: 560, height: 660)
+        .frame(width: 560, height: 700)
         .onAppear { accessibility.refresh() }
     }
 

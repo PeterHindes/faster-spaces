@@ -368,7 +368,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if onboardingWindow == nil {
             onboardingWindow = makeWindow(
                 title: "Welcome to Faster Spaces",
-                size: NSSize(width: 560, height: 660),
+                size: NSSize(width: 560, height: 700),
                 view: OnboardingView(
                     onDone: { [weak self] in
                         self?.settings.completedOnboarding = true
