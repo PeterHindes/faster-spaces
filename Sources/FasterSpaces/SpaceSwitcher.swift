@@ -244,7 +244,7 @@ final class SpaceSwitcher {
         // synthetic switch, so it cannot delay or disturb the Dock.
         if settings.subtleTransitionEnabled {
             if SpaceHUDOverlay.shared.isActive {
-                SpaceHUDOverlay.shared.updateDestination(to, direction: direction)
+                SpaceHUDOverlay.shared.advance(to: to, direction: direction)
             } else if let screen = NSScreen.underCursor {
                 SpaceHUDOverlay.shared.show(
                     from: from,

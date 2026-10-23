@@ -11,7 +11,7 @@ Long swipes can cross several desktops, and swiping back during the same gesture
 ## Features
 
 - **Instant switching** — no slide, blur, or wallpaper pan. The switch lands in one frame.
-- **Direction HUD** — an optional 0.25 s cue with two small desktop tiles sliding in the direction of travel. It shows where you came from and went without covering the screen. Turn it off for a hard cut.
+- **Direction HUD** — an optional 0.25 s cue with two small desktop tiles sliding in the direction of travel. Each additional Space crossed during one gesture replays the motion, so a long swipe visibly steps through the desktops. Turn it off for a hard cut.
 - **3 or 4 fingers, automatically** — reads the current macOS Spaces finger setting and ignores the other count. A 4-finger swipe does nothing when macOS is set to 3, and vice versa. No second gesture to configure.
 - **Multi-Space swipes** — keep swiping to cross up to 8 Spaces in one gesture. Set the distance per Space to taste.
 - **Bidirectional** — swipe back without lifting your fingers and the Spaces retrace. You are never locked into the first direction.
