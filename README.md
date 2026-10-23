@@ -16,6 +16,7 @@ Long swipes can cross several desktops, and swiping back during the same gesture
 - **Multi-Space swipes** — keep swiping to cross up to 8 Spaces in one gesture. Set the distance per Space to taste.
 - **Bidirectional** — swipe back without lifting your fingers and the Spaces retrace. You are never locked into the first direction.
 - **Menu-bar controls** — see the current Space, switch left/right, pause, or open settings.
+- **Ctrl+← / Ctrl+→** — the same instant switch from the keyboard, but only while macOS still has the “Move left/right a space” shortcut enabled and assigned to those keys. Remap or disable it in System Settings and the keys pass through untouched.
 - **Launch at login** — backed by a per-user LaunchAgent; enabled during onboarding and toggleable in Settings.
 - **Optional Space counter** in the menu bar.
 - **Trackpad haptics** — a quiet tick for each Space crossed.
@@ -106,6 +107,8 @@ open "fasterspaces://status"
 **Too many or too few Spaces per swipe.** Open Settings → Multiple Spaces and change **Distance per Space** or **Maximum Spaces per swipe**.
 
 **The direction HUD is missing.** Check **Settings → Gesture → Direction HUD (0.25 s)**. The HUD is purely visual and does not need Screen Recording; if Accessibility is healthy, the switch itself should still work.
+
+**Ctrl+←/→ does nothing.** Faster Spaces only intercepts it while the macOS “Move left/right a space” shortcut is enabled and assigned to Ctrl+←/→. Check **System Settings → Keyboard → Keyboard Shortcuts → Mission Control**. If it is remapped or disabled, the keys are deliberately left alone.
 
 **The animation still appears occasionally.** The first frame of a gesture is the Dock's; Faster Spaces only gets control once the gesture stream reports a direction. If it is consistently animated, check that Accessibility is still enabled and that no other Spaces utility is intercepting the same events.
 

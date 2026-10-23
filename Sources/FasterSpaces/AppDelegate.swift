@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "1.0.2"
+    static let version = "1.0.3"
 
     private let settings = SettingsStore.shared
     private let accessibility = AccessibilityManager.shared

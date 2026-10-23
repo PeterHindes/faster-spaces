@@ -166,6 +166,7 @@ final class SwipeInterceptor {
 
         let mask = (CGEventMask(1) << EventType.gesture)
             | (CGEventMask(1) << EventType.dockControl)
+            | (CGEventMask(1) << CGEventType.keyDown.rawValue)
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
@@ -250,6 +251,14 @@ final class SwipeInterceptor {
         let settings = SettingsStore.shared
         guard settings.enabled else {
             if tracking { resetGesture() }
+            return pass
+        }
+
+        if type == .keyDown {
+            if let direction = KeyboardSpaceShortcut.direction(for: event) {
+                SpaceSwitcher.shared.switchBy(steps: 1, direction: direction, reason: "ctrl-arrow")
+                return nil
+            }
             return pass
         }
 
