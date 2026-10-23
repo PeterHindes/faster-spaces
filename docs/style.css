@@ -207,6 +207,7 @@ h1 {
   font-size: 18px;
   line-height: 1.65;
   letter-spacing: -0.005em;
+  overflow-wrap: break-word;
 }
 .cta-row {
   display: flex;
@@ -222,8 +223,9 @@ h1 {
 }
 
 /* Window mock */
-.hero-visual { position: relative; }
+.hero-visual { position: relative; width: 100%; max-width: 620px; min-width: 0; }
 .window {
+  width: 100%;
   position: relative;
   z-index: 1;
   border-radius: 20px;
@@ -331,7 +333,7 @@ h1 {
 }
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 .feature-card h3 {
@@ -491,7 +493,7 @@ h1 {
 /* Install */
 .install-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 .install-card { padding-top: 28px; }
@@ -629,24 +631,30 @@ details p {
 
 /* Responsive */
 @media (max-width: 980px) {
-  .hero { grid-template-columns: 1fr; gap: 48px; padding-top: 64px; }
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 48px; padding-top: 64px; }
   .hero-visual { max-width: 620px; }
   .window { transform: none; }
-  .split { grid-template-columns: 1fr; gap: 36px; }
-  .feature-grid { grid-template-columns: repeat(2, 1fr); }
-  .install-grid { grid-template-columns: 1fr; }
+  .split { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .install-grid { grid-template-columns: minmax(0, 1fr); }
   .stat-strip { margin-bottom: 70px; }
 }
 @media (max-width: 720px) {
   .shell { width: min(var(--shell), calc(100% - 32px)); }
   .site-header nav { display: none; }
   .header-actions .github-link span { display: none; }
-  .header-inner { height: 62px; }
+  .header-inner { height: 62px; gap: 14px; }
+  .header-actions { gap: 12px; margin-left: auto; }
+  .header-actions .button-small { padding: 0 13px; }
   h1 { font-size: 42px; }
-  .lede { font-size: 16px; }
+  .lede { font-size: 15px; max-width: 100%; }
+  .cta-row { flex-direction: column; align-items: stretch; }
+  .cta-row .button { width: 100%; }
+  .hero { padding-top: 54px; padding-bottom: 50px; }
+  .hero-visual { max-width: 100%; }
   .stat-strip { grid-template-columns: repeat(2, 1fr); gap: 20px 0; }
   .stat-strip > div:nth-child(3) { border-left: 0; }
-  .feature-grid { grid-template-columns: 1fr; }
+  .feature-grid { grid-template-columns: minmax(0, 1fr); }
   .multi-stats { grid-template-columns: 1fr; gap: 14px; }
   .space-row { gap: 6px; }
   .space-chip { height: 64px; font-size: 11px; }
