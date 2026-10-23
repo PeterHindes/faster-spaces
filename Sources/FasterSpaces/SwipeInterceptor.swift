@@ -143,6 +143,8 @@ final class SwipeInterceptor {
     // touched there, so no locking is needed.
     private var tracking = false
     private var fired = false
+    private var ignoreForFingerCount = false
+    private var observedFingerCount = 0
     /// Net Spaces requested during this physical gesture. Positive means the
     /// user's effective direction is right. Reversing direction walks this
     /// number back down instead of being ignored.
@@ -229,6 +231,7 @@ final class SwipeInterceptor {
         if type == .tapDisabledByUserInput || type == .tapDisabledByTimeout {
             Log.info("Event tap disabled by system; re-enabling")
             resetGesture()
+            SpaceSwitcher.shared.noteGestureEnded()
             if let tap {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
@@ -287,8 +290,14 @@ final class SwipeInterceptor {
 
         switch phase {
         case GesturePhase.began.rawValue:
+            SpaceSwitcher.shared.noteGestureBegan()
             tracking = true
             fired = false
+            observedFingerCount = MultitouchTracker.shared.fingerCount
+            ignoreForFingerCount = shouldIgnoreForFingerCount()
+            if ignoreForFingerCount {
+                Log.debug("Ignoring \(observedFingerCount)-finger swipe; macOS is set to \(FingerConfiguration.macOSFingerCount)")
+            }
             netSteps = 0
             anchorProgress = 0
             startedAt = now
@@ -297,6 +306,15 @@ final class SwipeInterceptor {
         case GesturePhase.changed.rawValue:
             guard tracking else { return Unmanaged.passUnretained(event) }
             guard progress != 0 else { return nil }
+
+            if !ignoreForFingerCount, observedFingerCount == 0 {
+                observedFingerCount = MultitouchTracker.shared.fingerCount
+                ignoreForFingerCount = shouldIgnoreForFingerCount()
+                if ignoreForFingerCount {
+                    Log.debug("Ignoring \(observedFingerCount)-finger swipe; macOS is set to \(FingerConfiguration.macOSFingerCount)")
+                }
+            }
+            if ignoreForFingerCount { return nil }
 
             if !fired {
                 beginSwitching(progress: progress)
@@ -307,7 +325,7 @@ final class SwipeInterceptor {
 
         case GesturePhase.ended.rawValue:
             let wasTracking = tracking
-            if tracking, !fired {
+            if tracking, !fired, !ignoreForFingerCount {
                 let signal = velocityX != 0 ? velocityX : progress
                 if signal != 0 {
                     beginSwitching(progress: signal)
@@ -315,6 +333,7 @@ final class SwipeInterceptor {
             }
             logGestureEnd(progress: progress)
             resetGesture()
+            SpaceSwitcher.shared.noteGestureEnded()
 
             // On macOS 27 the Dock needs to see a terminal event to close the
             // native gesture state after our synthetic sequence. Clear the
@@ -329,6 +348,7 @@ final class SwipeInterceptor {
 
         case GesturePhase.cancelled.rawValue:
             resetGesture()
+            SpaceSwitcher.shared.noteGestureEnded()
             return nil
 
         default:
@@ -397,9 +417,17 @@ final class SwipeInterceptor {
         ))
     }
 
+    private func shouldIgnoreForFingerCount() -> Bool {
+        guard observedFingerCount > 0 else { return false }
+        let configured = FingerConfiguration.macOSFingerCount
+        return observedFingerCount != configured
+    }
+
     private func resetGesture() {
         tracking = false
         fired = false
+        ignoreForFingerCount = false
+        observedFingerCount = 0
         netSteps = 0
         anchorProgress = 0
     }

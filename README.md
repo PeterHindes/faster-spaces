@@ -11,7 +11,8 @@ Long swipes can cross several desktops, and swiping back during the same gesture
 ## Features
 
 - **Instant switching** — no slide, blur, or wallpaper pan. The switch lands in one frame.
-- **3 or 4 fingers, automatically** — follows whatever Spaces gesture macOS is configured to use. No second setup.
+- **Direction HUD** — an optional 0.25 s cue with two small desktop tiles sliding in the direction of travel. It shows where you came from and went without covering the screen. Turn it off for a hard cut.
+- **3 or 4 fingers, automatically** — reads the current macOS Spaces finger setting and ignores the other count. A 4-finger swipe does nothing when macOS is set to 3, and vice versa. No second gesture to configure.
 - **Multi-Space swipes** — keep swiping to cross up to 8 Spaces in one gesture. Set the distance per Space to taste.
 - **Bidirectional** — swipe back without lifting your fingers and the Spaces retrace. You are never locked into the first direction.
 - **Menu-bar controls** — see the current Space, switch left/right, pause, or open settings.
@@ -19,7 +20,7 @@ Long swipes can cross several desktops, and swiping back during the same gesture
 - **Optional Space counter** in the menu bar.
 - **Trackpad haptics** — a quiet tick for each Space crossed.
 - **Empty-desktop guard** — prevents macOS from yanking you to another Space after landing on an empty one.
-- **Local and private** — no telemetry, no network access, no account, no keystroke or screen recording.
+- **Local and private** — no telemetry, no network access, no account, no keystrokes, no screenshots, and no Screen Recording permission.
 
 ## Install
 
@@ -40,10 +41,11 @@ The app is a menu-bar utility (`LSUIElement`); it has no Dock icon. Look for the
 
 macOS has no supported switch to remove only the Spaces slide. Faster Spaces takes the route used by [WhichSpace](https://github.com/gechr/WhichSpace), [InstantSpaceSwitcher](https://github.com/jurplel/InstantSpaceSwitcher) and [noswoosh](https://github.com/mmathys/noswoosh):
 
-1. A `CGEventTap` watches the private Dock-control gesture stream (CGS event types 29 and 30) before the Dock sees the animated swipe.
+1. A `CGEventTap` watches the private Dock-control gesture stream (CGS event types 29 and 30) before the Dock sees the animated swipe. A raw-touch listener checks the actual finger count against the macOS setting, so only the configured 3- or 4-finger gesture acts.
 2. Horizontal Dock swipes are swallowed. Vertical swipes for Mission Control and App Exposé are passed through untouched.
 3. A complete synthetic `began` + `changed` + `ended` Dock swipe is posted with near-zero progress and a strong terminal velocity. The Dock commits the switch, but there is no distance left to animate.
 4. On macOS 27, the Dock validates synthetic swipes against a serialized raw IOHID queue payload. Faster Spaces attaches that payload and pairs each control event with a companion gesture event.
+5. A small, borderless HUD shows two desktop tiles sliding in the direction of the switch for 0.25 s. It is independent of the Dock and never delays or blocks the switch.
 
 This keeps Mission Control, focus, wallpaper, full-screen apps, and the Dock's own state consistent. It does **not** disable SIP, inject code, patch the Dock, or move windows.
 
@@ -102,6 +104,8 @@ open "fasterspaces://status"
 **Spaces switch in an unexpected order.** Turn off “Automatically rearrange Spaces based on most recent use” in **System Settings → Desktop & Dock**. macOS reorders Spaces as you use them, which makes any index-based prediction less intuitive.
 
 **Too many or too few Spaces per swipe.** Open Settings → Multiple Spaces and change **Distance per Space** or **Maximum Spaces per swipe**.
+
+**The direction HUD is missing.** Check **Settings → Gesture → Direction HUD (0.25 s)**. The HUD is purely visual and does not need Screen Recording; if Accessibility is healthy, the switch itself should still work.
 
 **The animation still appears occasionally.** The first frame of a gesture is the Dock's; Faster Spaces only gets control once the gesture stream reports a direction. If it is consistently animated, check that Accessibility is still enabled and that no other Spaces utility is intercepting the same events.
 

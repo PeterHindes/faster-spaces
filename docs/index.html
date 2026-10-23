@@ -57,7 +57,7 @@
           </a>
           <a class="button button-ghost" href="https://github.com/PeterHindes/faster-spaces">View source</a>
         </div>
-        <p class="micro">MIT licensed · no telemetry · no account · no SIP changes</p>
+        <p class="micro">MIT licensed · no telemetry · no screen recording · no account · no SIP changes</p>
       </div>
 
       <div class="hero-visual" aria-label="Faster Spaces settings window">
@@ -92,7 +92,7 @@
             <svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/></svg>
           </div>
           <h3>Instant by design</h3>
-          <p>The native gesture is intercepted before the Dock animates it. Faster Spaces posts the Dock's own swipe with near-zero travel and a fling velocity, so the Space changes in one frame — no slide, no blur, no lingering wallpaper pan.</p>
+          <p>The native gesture is intercepted before the Dock animates it. Faster Spaces posts the Dock's own swipe with near-zero travel and a fling velocity, so the Space changes in one frame — no slide, no blur, no lingering wallpaper pan. A compact direction HUD shows the move without covering the screen.</p>
         </article>
 
         <article class="card feature-card">
@@ -100,7 +100,7 @@
             <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v3h-2V5H7v14h4v2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm7 7h5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/></svg>
           </div>
           <h3>Follows your trackpad</h3>
-          <p>Three or four fingers — whichever macOS is set to. There is no second gesture to configure and no extra permission for the trackpad itself.</p>
+          <p>Reads the current macOS Spaces finger setting and ignores the other count. A 4-finger swipe does nothing when macOS is set to 3, and vice versa.</p>
         </article>
 
         <article class="card feature-card">
@@ -143,7 +143,7 @@
         <h2>It uses the Dock's own pipeline.</h2>
         <p class="muted">Faster Spaces does not move windows or fake Mission Control. It listens for the private Dock-swipe gesture, suppresses the animated original, and posts a complete synthetic gesture through the same path macOS uses. Mission Control, focus, wallpaper, full-screen apps and the Dock all stay in sync.</p>
         <ol class="steps">
-          <li><span>01</span><div><strong>Catch the gesture</strong><p>A CGEventTap watches Dock-control events before the Dock sees them. A vertical swipe for Mission Control is never touched.</p></div></li>
+          <li><span>01</span><div><strong>Catch the gesture</strong><p>A CGEventTap watches Dock-control events before the Dock sees them. A raw-touch check keeps only the finger count macOS is configured for; vertical Mission Control swipes are never touched.</p></div></li>
           <li><span>02</span><div><strong>Replace the travel</strong><p>The animated event is swallowed. A three-phase synthetic swipe is posted with almost no progress and a strong terminal velocity.</p></div></li>
           <li><span>03</span><div><strong>Land instantly</strong><p>The Dock commits the switch but has no distance left to animate. On macOS 27 a serialized IOHID payload makes the synthetic gesture pass validation.</p></div></li>
         </ol>
@@ -161,6 +161,26 @@
 <span class="k">began</span>   progress  ±1e-4
 <span class="k">changed</span> progress  ±1e-4
 <span class="k">ended</span>   velocity  ±9999</code></pre>
+      </div>
+    </section>
+
+    <section class="section shell hud-section">
+      <div class="hud-copy">
+        <p class="eyebrow">Direction, not drama</p>
+        <h2>Know which way you moved.</h2>
+        <p class="muted">A compact HUD slides two desktop tiles for a quarter of a second, showing the origin and destination without covering the screen or bringing back the native slide. It is purely visual, independent of the switch, and can be turned off for a hard cut.</p>
+        <ul class="hud-points">
+          <li>No screenshots or screen recording</li>
+          <li>No delay to the Space switch</li>
+          <li>Off switch in Settings</li>
+        </ul>
+      </div>
+      <div class="hud-demo" aria-label="Direction HUD illustration">
+        <div class="hud-pill">
+          <div class="hud-tile current">11</div>
+          <div class="hud-tile next">12</div>
+        </div>
+        <div class="hud-caption">Space 11 &rarr; Space 12 &middot; 0.25 s</div>
       </div>
     </section>
 

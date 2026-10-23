@@ -134,6 +134,12 @@ struct SettingsView: View {
                         isOn: $settings.enabled
                     )
                     Divider()
+                    SettingToggle(
+                        title: "Direction HUD (0.25 s)",
+                        detail: "Shows two small desktop tiles sliding in the direction of the switch. No screen recording or screenshots.",
+                        isOn: $settings.subtleTransitionEnabled
+                    )
+                    Divider()
                     HStack(spacing: 12) {
                         Image(systemName: "fingerprint")
                             .font(.system(size: 18))
@@ -375,7 +381,7 @@ struct OnboardingView: View {
                     number: 1,
                     title: "Grant Accessibility access",
                     detail: "macOS gates gesture replacement behind Accessibility. This app never records keystrokes or screen contents.",
-                    accessory: AnyView(permissionButton)
+                    accessory: AnyView(permissionAccessory)
                 )
                 step(
                     number: 2,
@@ -439,9 +445,9 @@ struct OnboardingView: View {
     }
 
     @ViewBuilder
-    private var permissionButton: some View {
+    private var permissionAccessory: some View {
         if accessibility.isTrusted, accessibility.tapInstalled {
-            Label("Granted", systemImage: "checkmark.circle.fill")
+            Label("Accessibility granted", systemImage: "checkmark.circle.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.green)
         } else if accessibility.isTrusted {

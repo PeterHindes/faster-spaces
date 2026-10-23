@@ -88,6 +88,9 @@ final class SpaceSwitcher {
     /// Number of synthetic gestures posted since launch (diagnostics).
     private(set) var postedGestureCount = 0
 
+    /// True between the gesture's began and ended/cancelled events.
+    private(set) var isGestureActive = false
+
     private init() {
         let major = Self.macOSMajorVersion()
         needsAugmentation = major >= 27
@@ -194,6 +197,15 @@ final class SpaceSwitcher {
         return snapshot.display.currentIndex
     }
 
+    func noteGestureBegan() {
+        isGestureActive = true
+    }
+
+    func noteGestureEnded() {
+        isGestureActive = false
+        SpaceHUDOverlay.shared.gestureEnded()
+    }
+
     /// Switch `steps` Spaces in `direction` (+1 right, -1 left). Returns the
     /// number of Spaces actually requested (0 at the edge).
     @discardableResult
@@ -214,16 +226,36 @@ final class SpaceSwitcher {
         }
 
         let distance = abs(target - current)
-        for _ in 0..<distance {
-            postSwitchGesture(right: direction > 0)
-        }
-        postedGestureCount += distance
         predictedIndex = target
         predictedDisplay = snapshot.display.identifier
         predictionTime = Date()
 
+        let settings = SettingsStore.shared
+        let right = direction > 0
         let from = current + 1
         let to = target + 1
+
+        for _ in 0..<distance {
+            postSwitchGesture(right: right)
+        }
+        postedGestureCount += distance
+
+        // A small, purely visual direction HUD. It is independent of the
+        // synthetic switch, so it cannot delay or disturb the Dock.
+        if settings.subtleTransitionEnabled {
+            if SpaceHUDOverlay.shared.isActive {
+                SpaceHUDOverlay.shared.updateDestination(to, direction: direction)
+            } else if let screen = NSScreen.underCursor {
+                SpaceHUDOverlay.shared.show(
+                    from: from,
+                    to: to,
+                    direction: direction,
+                    on: screen,
+                    waitForGestureEnd: isGestureActive
+                )
+            }
+        }
+
         Log.info("Switched \(from) -> \(to) of \(count)\(reason.isEmpty ? "" : " (\(reason))")")
         NotificationCenter.default.post(name: .fasterSpacesDidSwitch, object: nil)
         return distance
@@ -304,9 +336,14 @@ final class SpaceSwitcher {
         }
     }
 
-    private func makeAugmentedEvent(phase: GesturePhase, right: Bool) -> CGEvent? {
+    private func makeAugmentedEvent(
+        phase: GesturePhase,
+        right: Bool,
+        progressFraction: Double = 1e-4,
+        terminalVelocity: Double = 9999.0
+    ) -> CGEvent? {
         guard let event = CGEvent(source: nil) else { return nil }
-        let progress = (right ? -1e-4 : 1e-4) * postedSwipeSign
+        let progress = (right ? -progressFraction : progressFraction) * postedSwipeSign
         event.setIntegerValueField(Field.cgsEventType, value: EventType.dockControl)
         event.setIntegerValueField(Field.gestureHIDType, value: HIDType.dockSwipe)
         event.setIntegerValueField(Field.gesturePhase, value: phase.rawValue)
@@ -316,7 +353,7 @@ final class SpaceSwitcher {
         if phase == .ended {
             event.setDoubleValueField(
                 Field.swipeVelocityX,
-                value: (right ? -9999.0 : 9999.0) * postedSwipeSign
+                value: (right ? -terminalVelocity : terminalVelocity) * postedSwipeSign
             )
             event.setDoubleValueField(Field.swipeVelocityY, value: 0)
         }

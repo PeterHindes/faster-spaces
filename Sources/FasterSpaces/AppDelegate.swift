@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "1.0.0"
+    static let version = "1.0.1"
 
     private let settings = SettingsStore.shared
     private let accessibility = AccessibilityManager.shared
@@ -38,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         configureStatusItem()
         configureMenu()
         observeApp()
+        MultitouchTracker.shared.start()
         LaunchAtLogin.refreshIfEnabled()
         settings.refreshLaunchAtLogin()
         if settings.completedOnboarding,

@@ -9,6 +9,7 @@ final class SettingsStore: ObservableObject {
     private enum Key {
         static let enabled = "enabled"
         static let multiSpaceEnabled = "multiSpaceEnabled"
+        static let subtleTransitionEnabled = "subtleTransitionEnabled"
         static let progressPerSpace = "progressPerSpace"
         static let maximumSpacesPerSwipe = "maximumSpacesPerSwipe"
         static let invertDirection = "invertDirection"
@@ -27,6 +28,11 @@ final class SettingsStore: ObservableObject {
 
     @Published var multiSpaceEnabled: Bool {
         didSet { defaults.set(multiSpaceEnabled, forKey: Key.multiSpaceEnabled) }
+    }
+
+    /// A short out-and-in slide around the instant switch. Off means a hard cut.
+    @Published var subtleTransitionEnabled: Bool {
+        didSet { defaults.set(subtleTransitionEnabled, forKey: Key.subtleTransitionEnabled) }
     }
 
     /// Normalized swipe progress required for each additional Space. Tuned
@@ -69,6 +75,7 @@ final class SettingsStore: ObservableObject {
         let defaults = UserDefaults.standard
         enabled = defaults.object(forKey: Key.enabled) as? Bool ?? true
         multiSpaceEnabled = defaults.object(forKey: Key.multiSpaceEnabled) as? Bool ?? true
+        subtleTransitionEnabled = defaults.object(forKey: Key.subtleTransitionEnabled) as? Bool ?? true
         progressPerSpace = defaults.object(forKey: Key.progressPerSpace) as? Double ?? 0.20
         maximumSpacesPerSwipe = defaults.object(forKey: Key.maximumSpacesPerSwipe) as? Int ?? 4
         invertDirection = defaults.bool(forKey: Key.invertDirection)
