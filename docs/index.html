@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Faster Spaces — instant macOS Spaces switching</title>
+  <meta name="description" content="Faster Spaces removes the slide from macOS Spaces. Keep your normal three- or four-finger swipe, cross several desktops in one gesture, and swipe back to retrace them. Free and open source.">
+  <meta name="theme-color" content="#0a0c16">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Faster Spaces — instant macOS Spaces switching">
+  <meta property="og:description" content="Your Spaces gesture, without the slide. Free, open-source menu-bar app for macOS.">
+  <meta property="og:image" content="https://peterhindes.github.io/faster-spaces/social.png">
+  <meta property="og:url" content="https://peterhindes.github.io/faster-spaces/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Faster Spaces — instant macOS Spaces switching">
+  <meta name="twitter:description" content="Your Spaces gesture, without the slide.">
+  <meta name="twitter:image" content="https://peterhindes.github.io/faster-spaces/social.png">
+  <link rel="icon" href="icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./" aria-label="Faster Spaces home">
+        <img src="icon.png" alt="" width="32" height="32">
+        <span>Faster Spaces</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#install">Install</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="header-actions">
+        <a class="github-link" href="https://github.com/PeterHindes/faster-spaces" aria-label="Faster Spaces on GitHub">
+          <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <a class="button button-small" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip">Download</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero shell">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot"></span> Free &amp; open source · macOS 27</p>
+        <h1>Switch Spaces.<br><span class="gradient">Instantly.</span></h1>
+        <p class="lede">Faster Spaces removes the slide from macOS Spaces. Your normal three- or four-finger swipe still works — it just arrives instantly. Keep swiping to cross several desktops, and swipe back to retrace them.</p>
+        <div class="cta-row">
+          <a class="button button-primary" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
+            Download for macOS
+          </a>
+          <a class="button button-ghost" href="https://github.com/PeterHindes/faster-spaces">View source</a>
+        </div>
+        <p class="micro">MIT licensed · no telemetry · no account · no SIP changes</p>
+      </div>
+
+      <div class="hero-visual" aria-label="Faster Spaces settings window">
+        <div class="window">
+          <div class="window-bar">
+            <span class="light red"></span><span class="light yellow"></span><span class="light green"></span>
+            <span class="window-title">Faster Spaces Settings</span>
+          </div>
+          <img src="settings.png" alt="Faster Spaces settings: gesture, multiple Spaces, distance per Space, and haptics controls." width="1280" height="1520">
+        </div>
+        <div class="glow" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="stat-strip shell" aria-label="At a glance">
+      <div><strong>0</strong><span>animation frames</span></div>
+      <div><strong>3 / 4</strong><span>fingers, as configured</span></div>
+      <div><strong>1–8</strong><span>Spaces per gesture</span></div>
+      <div><strong>100%</strong><span>local &amp; private</span></div>
+    </section>
+
+    <section id="features" class="section shell">
+      <div class="section-head">
+        <p class="eyebrow">Built for people who live in Spaces</p>
+        <h2>Everything the slide should have been.</h2>
+        <p>No new muscle memory. No system hacks. Just the gesture you already use, with the delay removed.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="card feature-card wide">
+          <div class="icon tile-blue" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/></svg>
+          </div>
+          <h3>Instant by design</h3>
+          <p>The native gesture is intercepted before the Dock animates it. Faster Spaces posts the Dock's own swipe with near-zero travel and a fling velocity, so the Space changes in one frame — no slide, no blur, no lingering wallpaper pan.</p>
+        </article>
+
+        <article class="card feature-card">
+          <div class="icon tile-violet" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v3h-2V5H7v14h4v2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm7 7h5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/></svg>
+          </div>
+          <h3>Follows your trackpad</h3>
+          <p>Three or four fingers — whichever macOS is set to. There is no second gesture to configure and no extra permission for the trackpad itself.</p>
+        </article>
+
+        <article class="card feature-card">
+          <div class="icon tile-green" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 5h10v2H4V5Zm0 6h10v2H4v-2Zm0 6h10v2H4v-2Zm14.7-8.3-1.4-1.4L14 10.6l-1.3-1.3-1.4 1.4L14 13.4l4.7-4.7Z"/></svg>
+          </div>
+          <h3>Cross several Spaces</h3>
+          <p>A long swipe keeps going. Set the distance per Space and the maximum jump, then move through a whole row of desktops in one motion.</p>
+        </article>
+
+        <article class="card feature-card">
+          <div class="icon tile-orange" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.5 4 4 12h5l-1 8 7-10h-5l1-6h-1.5Z"/></svg>
+          </div>
+          <h3>Reverse mid-swipe</h3>
+          <p>Changed your mind halfway? Swipe back without lifting your fingers. Every threshold you cross is tracked in both directions, so the Spaces retrace instead of locking you into the first direction.</p>
+        </article>
+
+        <article class="card feature-card">
+          <div class="icon tile-pink" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 4h16v3H4V4Zm0 6h16v3H4v-3Zm0 6h10v3H4v-3Z"/></svg>
+          </div>
+          <h3>Lives in the menu bar</h3>
+          <p>See your current Space, jump left or right, pause the app, or open settings from a tiny menu-bar icon. Optionally show the Space counter next to it.</p>
+        </article>
+
+        <article class="card feature-card">
+          <div class="icon tile-cyan" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7v3.3l-1.7 3.4A1 1 0 0 0 4.2 17h15.6a1 1 0 0 0 .9-1.3L19 12.3V9a7 7 0 0 0-7-7Zm0 20a3 3 0 0 0 2.8-2H9.2A3 3 0 0 0 12 22Z"/></svg>
+          </div>
+          <h3>Quietly considerate</h3>
+          <p>Launch at login, subtle haptic ticks, and an empty-desktop guard that stops macOS from yanking you to another Space a moment after you land.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="how" class="section shell split">
+      <div class="split-copy">
+        <p class="eyebrow">Under the hood</p>
+        <h2>It uses the Dock's own pipeline.</h2>
+        <p class="muted">Faster Spaces does not move windows or fake Mission Control. It listens for the private Dock-swipe gesture, suppresses the animated original, and posts a complete synthetic gesture through the same path macOS uses. Mission Control, focus, wallpaper, full-screen apps and the Dock all stay in sync.</p>
+        <ol class="steps">
+          <li><span>01</span><div><strong>Catch the gesture</strong><p>A CGEventTap watches Dock-control events before the Dock sees them. A vertical swipe for Mission Control is never touched.</p></div></li>
+          <li><span>02</span><div><strong>Replace the travel</strong><p>The animated event is swallowed. A three-phase synthetic swipe is posted with almost no progress and a strong terminal velocity.</p></div></li>
+          <li><span>03</span><div><strong>Land instantly</strong><p>The Dock commits the switch but has no distance left to animate. On macOS 27 a serialized IOHID payload makes the synthetic gesture pass validation.</p></div></li>
+        </ol>
+        <p class="micro">No SIP disable. No injected code. No DYLD tricks. Accessibility permission is required because macOS gates synthetic input behind it.</p>
+      </div>
+      <div class="split-visual">
+        <div class="diagram" aria-label="Gesture pipeline diagram">
+          <div class="diagram-node"><span class="node-dot"></span><strong>Trackpad</strong><small>3 / 4 finger swipe</small></div>
+          <div class="diagram-line"></div>
+          <div class="diagram-node accent"><span class="node-dot"></span><strong>Event tap</strong><small>suppress animation</small></div>
+          <div class="diagram-line"></div>
+          <div class="diagram-node accent2"><span class="node-dot"></span><strong>Dock</strong><small>instant commit</small></div>
+        </div>
+        <pre class="code"><code><span class="c">// one switch, three phases</span>
+<span class="k">began</span>   progress  ±1e-4
+<span class="k">changed</span> progress  ±1e-4
+<span class="k">ended</span>   velocity  ±9999</code></pre>
+      </div>
+    </section>
+
+    <section class="section shell">
+      <div class="section-head">
+        <p class="eyebrow">Long swipes, not long waits</p>
+        <h2>One gesture. A whole row of Spaces.</h2>
+        <p>Set the distance per Space to taste. The first Space always moves immediately; each extra threshold crosses one more. Swipe back and the count walks down again.</p>
+      </div>
+      <div class="multi-panel">
+        <div class="space-row" aria-hidden="true">
+          <div class="space-chip">1</div><div class="space-chip">2</div><div class="space-chip">3</div><div class="space-chip active">4</div><div class="space-chip">5</div><div class="space-chip">6</div><div class="space-chip">7</div>
+          <div class="space-bolt" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="34" height="34"><path fill="currentColor" d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/></svg>
+          </div>
+        </div>
+        <div class="multi-stats">
+          <div><strong>Bidirectional</strong><span>Move back without lifting your fingers.</span></div>
+          <div><strong>1–8 Spaces</strong><span>Cap the jump so a flick stays predictable.</span></div>
+          <div><strong>Haptic feedback</strong><span>A quiet tick for every Space crossed.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="section shell install">
+      <div class="section-head">
+        <p class="eyebrow">Install in under a minute</p>
+        <h2>Bring your own Spaces.</h2>
+        <p>Requires macOS 13 or later. Tested on macOS 27.0.1 (Apple Silicon). The distributed build is self-signed, not notarized.</p>
+      </div>
+      <div class="install-grid">
+        <article class="card install-card">
+          <span class="step-badge">1</span>
+          <h3>Download &amp; unzip</h3>
+          <p>Grab the latest release, unzip it, and drag <strong>Faster Spaces.app</strong> into <code>/Applications</code>.</p>
+          <a class="text-link" href="https://github.com/PeterHindes/faster-spaces/releases/latest">All releases →</a>
+        </article>
+        <article class="card install-card">
+          <span class="step-badge">2</span>
+          <h3>Open it once</h3>
+          <p>Because the build is not notarized, macOS may ask you to confirm. Right-click the app and choose <strong>Open</strong>, or clear the quarantine flag:</p>
+          <div class="command"><code>xattr -dr com.apple.quarantine "/Applications/Faster Spaces.app"</code><button class="copy" data-copy="xattr -dr com.apple.quarantine &quot;/Applications/Faster Spaces.app&quot;" aria-label="Copy command">Copy</button></div>
+        </article>
+        <article class="card install-card">
+          <span class="step-badge">3</span>
+          <h3>Grant Accessibility</h3>
+          <p>Open the welcome window and click <strong>Grant Access…</strong>, then enable <strong>Faster Spaces</strong> in System Settings → Privacy &amp; Security → Accessibility. Swipe normally.</p>
+          <a class="text-link" href="#faq">Why is this needed? →</a>
+        </article>
+      </div>
+      <div class="build-note">
+        <p><strong>Prefer to build it yourself?</strong> The whole app is a handful of Swift files and a shell script. No Xcode project required.</p>
+        <div class="command"><code>git clone https://github.com/PeterHindes/faster-spaces.git &amp;&amp; cd faster-spaces &amp;&amp; ./scripts/build.sh</code><button class="copy" data-copy="git clone https://github.com/PeterHindes/faster-spaces.git &amp;&amp; cd faster-spaces &amp;&amp; ./scripts/build.sh" aria-label="Copy build command">Copy</button></div>
+      </div>
+    </section>
+
+    <section id="faq" class="section shell">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2>Good to know.</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>Why does it need Accessibility permission?</summary>
+          <p>macOS only lets trusted apps replace synthetic input. Faster Spaces uses that access to read the Dock's private gesture stream and post the instant replacement. It does not read keystrokes, screen contents, or any other input.</p>
+        </details>
+        <details>
+          <summary>Does it disable SIP or modify system files?</summary>
+          <p>No. It does not disable SIP, inject code, or patch Dock. It uses public CGEventTap and CGEventPost APIs with a few undocumented event field constants. The only persistent change it offers is a per-user LaunchAgent for “Launch at login,” which you can turn off.</p>
+        </details>
+        <details>
+          <summary>Will it work with 3 fingers and 4 fingers?</summary>
+          <p>Yes, automatically. Faster Spaces intercepts the Spaces gesture the Dock already receives, so it follows whatever is configured in System Settings → Trackpad → More Gestures. There is no second setting.</p>
+        </details>
+        <details>
+          <summary>What happens to Mission Control and App Exposé?</summary>
+          <p>They are untouched. Only horizontal Dock-swipe gestures are intercepted; vertical swipes are passed through unchanged.</p>
+        </details>
+        <details>
+          <summary>Why is the download not notarized?</summary>
+          <p>Faster Spaces is an independent open-source utility. The release is self-signed so the Accessibility grant stays stable across rebuilds, but it is not signed with a paid Apple Developer ID. That is why the first launch needs a right-click → Open. The source is available if you would rather build it locally.</p>
+        </details>
+        <details>
+          <summary>How do I uninstall it?</summary>
+          <p>Turn off Launch at Login in settings, quit Faster Spaces, drag it from Applications to the Trash, and remove it from System Settings → Privacy &amp; Security → Accessibility. The LaunchAgent lives at <code>~/Library/LaunchAgents/com.fasterplz.fasterspaces.login.plist</code> if you need to remove it manually.</p>
+        </details>
+        <details>
+          <summary>What about multiple displays?</summary>
+          <p>The Dock routes a Space swipe to the display under the pointer, not the display with keyboard focus. Faster Spaces follows the same rule, so hovering a display before swiping targets that display.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div class="footer-brand">
+        <img src="icon.png" alt="" width="28" height="28">
+        <span>Faster Spaces</span>
+      </div>
+      <p>Built for macOS. MIT licensed. Inspired by WhichSpace, InstantSpaceSwitcher, noswoosh and iss.</p>
+      <div class="footer-links">
+        <a href="https://github.com/PeterHindes/faster-spaces">Source</a>
+        <a href="https://github.com/PeterHindes/faster-spaces/blob/main/THIRD_PARTY_NOTICES.md">Credits</a>
+        <a href="https://github.com/PeterHindes/faster-spaces/issues">Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
