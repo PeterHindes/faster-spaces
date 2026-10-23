@@ -15,7 +15,7 @@ Long swipes can cross several desktops, and swiping back during the same gesture
 - **Multi-Space swipes** — keep swiping to cross up to 8 Spaces in one gesture. Set the distance per Space to taste.
 - **Bidirectional** — swipe back without lifting your fingers and the Spaces retrace. You are never locked into the first direction.
 - **Menu-bar controls** — see the current Space, switch left/right, pause, or open settings.
-- **Launch at login** — backed by a per-user LaunchAgent; toggle it in Settings.
+- **Launch at login** — backed by a per-user LaunchAgent; enabled during onboarding and toggleable in Settings.
 - **Optional Space counter** in the menu bar.
 - **Trackpad haptics** — a quiet tick for each Space crossed.
 - **Empty-desktop guard** — prevents macOS from yanking you to another Space after landing on an empty one.
@@ -23,7 +23,7 @@ Long swipes can cross several desktops, and swiping back during the same gesture
 
 ## Install
 
-**Requires macOS 13 or later.** Tested on macOS 27.0.1 (Apple Silicon). The macOS 27+ path includes the serialized IOHID payload that the Dock validates; a legacy path is included for older releases but has not been tested as widely.
+**Requires macOS 13 or later.** The release is Apple Silicon (arm64), tested on macOS 27.0.1. The macOS 27+ path includes the serialized IOHID payload that the Dock validates; a legacy path is included for older releases but has not been tested as widely.
 
 1. Download `Faster-Spaces.zip` from the [latest release](https://github.com/PeterHindes/faster-spaces/releases/latest).
 2. Unzip it and drag **Faster Spaces.app** to `/Applications`.
