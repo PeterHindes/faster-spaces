@@ -58,6 +58,12 @@ The gesture's normalized travel is tracked in both directions. The first Space m
 
 macOS only allows trusted apps to replace synthetic input. Accessibility permission is required both to read the Dock gesture stream and to post the instant replacement. The app requests nothing else. It has no network code and does not read keystrokes or screen contents.
 
+## Maintainer documentation
+
+Architecture, private-API invariants, TCC/signing notes, release steps, testing
+matrices, and the failed approaches we deliberately removed are documented in
+[MAINTAINERS.md](MAINTAINERS.md). Read it before changing the gesture pipeline.
+
 ## Build from source
 
 Requires Xcode 27 command-line tools (`swiftc`) and macOS 27 SDK to build. No Xcode project is needed.
