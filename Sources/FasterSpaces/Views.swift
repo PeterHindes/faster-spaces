@@ -200,6 +200,7 @@ struct SettingsView: View {
     @ObservedObject private var ui = AppUIState.shared
     @ObservedObject private var dockRules = AppRulesStore.shared
     @ObservedObject private var dockStatus = DockStatusModel.shared
+    @ObservedObject private var updates = UpdateChecker.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -839,6 +840,33 @@ struct SettingsView: View {
                     )
                 }
 
+                SettingsCard(title: "Updates", systemImage: "arrow.triangle.2.circlepath") {
+                    HStack(alignment: .center, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Faster Spaces \(AppInfo.version)")
+                                .font(.system(size: 11, weight: .medium))
+                            Text(updateDetail)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 8)
+                        if case .available = updates.state {
+                            Button("Download…") { updates.openReleasePage() }
+                                .controlSize(.small)
+                        }
+                        Button(updates.state == .checking ? "Checking…" : "Check for Updates") {
+                            updates.check()
+                        }
+                        .controlSize(.small)
+                        .disabled(updates.state == .checking)
+                    }
+                    Text("Fetches a small version file from the project website only when you ask. No account, identifier, or telemetry is sent.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 SettingsCard(title: "Permissions", systemImage: "lock.shield") {
                     permissionRow(
                         title: "Accessibility",
@@ -901,6 +929,25 @@ struct SettingsView: View {
                 .padding(.bottom, 4)
             }
             .padding(14)
+        }
+    }
+
+    private var updateDetail: String {
+        switch updates.state {
+        case .checking:
+            return "Contacting the project website…"
+        case .available(let version):
+            return "Version \(version) is available."
+        case .failed(let message):
+            return message
+        case .upToDate:
+            return AppInfo.version == "dev"
+                ? "Development build — update checks compare tagged releases."
+                : "You're up to date."
+        case .idle:
+            return AppInfo.version == "dev"
+                ? "Development build. Check the project website for a tagged release."
+                : "Check the project website for a newer release."
         }
     }
 

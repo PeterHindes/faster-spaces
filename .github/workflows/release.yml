@@ -337,8 +337,8 @@ jobs:
             echo "Restored docs/.nojekyll"
           fi
 
-          git diff -- docs/index.html
-          if [ -n "$(git status --porcelain -- docs/index.html docs/.nojekyll)" ]; then
+          git diff -- docs/index.html docs/latest.json
+          if [ -n "$(git status --porcelain -- docs/index.html docs/latest.json docs/.nojekyll)" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -350,7 +350,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html docs/.nojekyll
+          git add docs/index.html docs/latest.json docs/.nojekyll
           git commit -m "Site: download $TAG"
 
           for attempt in 1 2 3; do

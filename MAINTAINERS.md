@@ -78,7 +78,8 @@ before touching `SwipeInterceptor.swift`, `WindowSwitchController.swift`, or
   an Accessibility-only Seek.
 - Optional live window thumbnails, captured only while the switcher is open and
   only with Screen Recording permission.
-- A local-only utility: no network code and no telemetry. Keystrokes are
+- A local-only utility: no telemetry. The only network request is a
+  user-triggered update check against a static version file; keystrokes are
   processed locally for the opt-in layer and are never stored or transmitted.
 
 ### It is not
@@ -598,7 +599,8 @@ runs on GitHub's arm64 macOS 27 image (`xcode-27`), executes
    caveats;
 3. points the marked download anchors in `docs/index.html` at
    `releases/download/vX.Y.Z/Faster-Spaces.zip`, updates the visible version,
-   commits that change to `main`, and requests a Pages rebuild;
+   writes `docs/latest.json` (the app's update feed), commits that change to
+   `main`, and requests a Pages rebuild;
 4. attaches the zip and checksum to the Actions run as
    `faster-spaces-release`.
 
@@ -666,6 +668,9 @@ the `releases/latest/download/...` fallback all depend on it. Pages deploys from
 - The visible site version (`data-release-version` in `docs/index.html`) is
   updated by `scripts/update-site-release.py` during a release. Run it manually
   if a release is published outside Actions.
+- `docs/latest.json` is the update feed read by Settings → General and the
+  “Check for Updates…” menu item. The same release helper rewrites it, so the
+  app only needs to fetch one static file; the app never checks automatically.
 - The download counter is read in the browser from the public GitHub Releases
   API (`download_count` on `Faster-Spaces.zip` across published releases) and
   cached in `localStorage` for 15 minutes. There is intentionally no counter

@@ -16,8 +16,10 @@ Markup contract (see docs/index.html):
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 VERSION_RE = re.compile(
@@ -52,6 +54,12 @@ def main() -> int:
         type=Path,
         default=Path(__file__).resolve().parent.parent / "docs" / "index.html",
         help="path to docs/index.html",
+    )
+    parser.add_argument(
+        "--feed",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / "docs" / "latest.json",
+        help="update feed read by the app",
     )
     args = parser.parse_args()
 
@@ -103,10 +111,23 @@ def main() -> int:
     if html != args.index.read_text(encoding="utf-8"):
         args.index.write_text(html, encoding="utf-8")
 
+    feed = {
+        "version": version,
+        "tag": tag,
+        "url": f"https://github.com/PeterHindes/faster-spaces/releases/tag/{tag}",
+        "download": download_url,
+        "published_at": datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
+    }
+    args.feed.parent.mkdir(parents=True, exist_ok=True)
+    args.feed.write_text(json.dumps(feed, indent=2) + "\n", encoding="utf-8")
+
     print(
         f"site points at {tag}: "
         f"{download_count} download link(s), {checksum_count} checksum link(s), "
-        f"{version_count} version label(s)"
+        f"{version_count} version label(s); wrote {args.feed}"
     )
     return 0
 

@@ -30,7 +30,8 @@ The Spaces gesture is intercepted before the Dock sees the animated swipe, and a
 - **Optional Space counter** in the menu bar.
 - **Trackpad haptics** — a quiet tick for each Space crossed.
 - **Empty-desktop guard** — prevents macOS from yanking you to another Space after landing on an empty one.
-- **Local and private** — no telemetry, no network access, and no account. Keystrokes are processed locally for the optional layer and are never stored or transmitted. Screen Recording is requested only if you enable window thumbnails; otherwise the app never captures the screen.
+- **Local and private** — no telemetry, no account, and no background network access. Keystrokes are processed locally for the optional layer and are never stored or transmitted. Screen Recording is requested only if you enable window thumbnails; otherwise the app never captures the screen. The only network request is the update check you trigger, which reads a small version file from the project website.
+- **Update check** — Settings → General (or the menu bar) can compare your version with the latest release. Nothing is checked automatically and no identifier is sent.
 
 ## Install
 
@@ -80,7 +81,7 @@ The gesture's normalized travel is tracked in both directions. The first Space m
 
 ### Why Accessibility?
 
-macOS only allows trusted apps to replace synthetic input. Accessibility permission is required to read the Dock gesture stream, post the instant replacement, and run the keyboard layer and Dock features. Screen Recording is optional and only used to capture the thumbnails you ask for in the switcher. The app has no network code; keystrokes are processed locally and are never stored or transmitted.
+macOS only allows trusted apps to replace synthetic input. Accessibility permission is required to read the Dock gesture stream, post the instant replacement, and run the keyboard layer and Dock features. Screen Recording is optional and only used to capture the thumbnails you ask for in the switcher. The only network request is the update check you trigger; keystrokes are processed locally and are never stored or transmitted.
 
 ## Maintainer documentation
 

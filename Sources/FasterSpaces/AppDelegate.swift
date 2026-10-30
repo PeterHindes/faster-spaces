@@ -58,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         configureStatusItem()
         configureMenu()
+        configureMainMenu()
         observeApp()
         MultitouchTracker.shared.start()
         WindowCatalogService.shared.start()
@@ -158,6 +159,104 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func configureMenu() {
         statusMenu.delegate = self
         statusItem.menu = statusMenu
+    }
+
+    /// A minimal main menu so a regular (Command-Tab visible) Faster Spaces
+    /// behaves like a normal app while Settings is open.
+    private func configureMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appItem = NSMenuItem()
+        mainMenu.addItem(appItem)
+        let appMenu = NSMenu(title: "Faster Spaces")
+        appItem.submenu = appMenu
+
+        let about = NSMenuItem(
+            title: "About Faster Spaces",
+            action: #selector(showAbout),
+            keyEquivalent: ""
+        )
+        about.target = self
+        appMenu.addItem(about)
+
+        let updates = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(checkForUpdatesAction),
+            keyEquivalent: ""
+        )
+        updates.target = self
+        appMenu.addItem(updates)
+
+        appMenu.addItem(.separator())
+
+        let settingsItem = NSMenuItem(
+            title: "Settings…",
+            action: #selector(openSettingsAction),
+            keyEquivalent: ","
+        )
+        settingsItem.target = self
+        appMenu.addItem(settingsItem)
+
+        appMenu.addItem(.separator())
+
+        let hide = NSMenuItem(
+            title: "Hide Faster Spaces",
+            action: #selector(NSApplication.hide(_:)),
+            keyEquivalent: "h"
+        )
+        hide.target = NSApp
+        appMenu.addItem(hide)
+
+        let hideOthers = NSMenuItem(
+            title: "Hide Others",
+            action: #selector(NSApplication.hideOtherApplications(_:)),
+            keyEquivalent: "h"
+        )
+        hideOthers.keyEquivalentModifierMask = [.command, .option]
+        hideOthers.target = NSApp
+        appMenu.addItem(hideOthers)
+
+        let showAll = NSMenuItem(
+            title: "Show All",
+            action: #selector(NSApplication.unhideAllApplications(_:)),
+            keyEquivalent: ""
+        )
+        showAll.target = NSApp
+        appMenu.addItem(showAll)
+
+        appMenu.addItem(.separator())
+
+        let quit = NSMenuItem(
+            title: "Quit Faster Spaces",
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        )
+        quit.target = NSApp
+        appMenu.addItem(quit)
+
+        let windowItem = NSMenuItem()
+        mainMenu.addItem(windowItem)
+        let windowMenu = NSMenu(title: "Window")
+        windowItem.submenu = windowMenu
+        windowMenu.addItem(
+            withTitle: "Minimize",
+            action: #selector(NSWindow.performMiniaturize(_:)),
+            keyEquivalent: "m"
+        )
+        windowMenu.addItem(
+            withTitle: "Zoom",
+            action: #selector(NSWindow.performZoom(_:)),
+            keyEquivalent: ""
+        )
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(
+            withTitle: "Bring All to Front",
+            action: #selector(NSApplication.arrangeInFront(_:)),
+            keyEquivalent: ""
+        )
+        NSApp.windowsMenu = windowMenu
+
+        NSApp.mainMenu = mainMenu
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -320,6 +419,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let about = NSMenuItem(title: "About Faster Spaces", action: #selector(showAbout), keyEquivalent: "")
         about.target = self
         menu.addItem(about)
+
+        let checkForUpdates = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(checkForUpdatesAction),
+            keyEquivalent: ""
+        )
+        checkForUpdates.target = self
+        menu.addItem(checkForUpdates)
 
         let quit = NSMenuItem(title: "Quit Faster Spaces", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
@@ -598,6 +705,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         ])
     }
 
+    @objc private func checkForUpdatesAction() {
+        UpdateChecker.shared.check { [weak self] state in
+            self?.presentUpdateResult(state)
+        }
+    }
+
+    private func presentUpdateResult(_ state: UpdateChecker.State) {
+        switch state {
+        case .available(let version):
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            alert.messageText = "Faster Spaces \(version) is available"
+            alert.informativeText = "You're running \(AppInfo.version). Open the release page to download the update."
+            alert.addButton(withTitle: "Download…")
+            alert.addButton(withTitle: "Later")
+            if alert.runModal() == .alertFirstButtonReturn {
+                UpdateChecker.shared.openReleasePage()
+            }
+        case .upToDate:
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            alert.messageText = "You're up to date"
+            alert.informativeText = "Faster Spaces \(AppInfo.version) is the latest version."
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        case .failed(let message):
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Couldn't check for updates"
+            alert.informativeText = message
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        case .idle, .checking:
+            break
+        }
+    }
+
     // MARK: Windows
 
     private func showSettings() {
@@ -679,9 +824,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     private func present(_ window: NSWindow?) {
         guard let window else { return }
+
+        // Become a regular app before ordering the window. Switching the
+        // policy after the window is already front can leave the app out of
+        // Command-Tab until the next activation change.
+        setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
-        updateActivationPolicy()
         NSApp.activate(ignoringOtherApps: true)
+        window.makeKey()
+
+        // The WindowServer applies a policy change asynchronously. Re-assert
+        // it once the window is actually on screen.
+        DispatchQueue.main.async { [weak self, weak window] in
+            guard let self, let window, window.isVisible else { return }
+            self.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            NSRunningApplication.current.activate(
+                options: [.activateAllWindows, .activateIgnoringOtherApps]
+            )
+            window.makeKey()
+        }
+    }
+
+    private func setActivationPolicy(_ policy: NSApplication.ActivationPolicy) {
+        guard NSApp.activationPolicy() != policy else { return }
+        let applied = NSApp.setActivationPolicy(policy)
+        Log.info(
+            "Activation policy -> \(policy == .regular ? "regular (Command-Tab visible)" : "accessory")"
+                + " (applied: \(applied))"
+        )
     }
 
     /// Accessory apps do not appear in Command-Tab. While one of our real
@@ -693,8 +864,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             .contains { $0.isVisible }
         let desired: NSApplication.ActivationPolicy = visible ? .regular : .accessory
         guard NSApp.activationPolicy() != desired else { return }
-        NSApp.setActivationPolicy(desired)
-        Log.info("Activation policy -> \(desired == .regular ? "regular (Command-Tab visible)" : "accessory")")
+        setActivationPolicy(desired)
+        if desired == .regular {
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -883,6 +1056,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         case "settings":
             applyTab(value("tab"))
             showSettings()
+        case "check-updates":
+            UpdateChecker.shared.check()
         case "diagnostics":
             showDiagnostics()
         case "onboarding":

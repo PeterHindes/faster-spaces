@@ -19,6 +19,7 @@ enum SelfTest {
         testWindowSelection()
         testWindowCatalog()
         testDockClickPolicy()
+        testVersionComparison()
         testSettingsLimits()
 
         print("")
@@ -147,6 +148,15 @@ enum SelfTest {
         check(decide([.maskShift], .newWindow, tile: stopped) == .passThrough(.applicationNotRunning), "Non-running apps stay native")
         check(decide([.maskShift], .newWindow, tile: nil) == .passThrough(.noTile), "Non-Dock clicks stay native")
         check(policy.decide(isEnabled: false, tile: running, modifiers: [], configuredAction: .newWindow) == .passThrough(.disabled), "Disabled policy passes through")
+    }
+
+    private static func testVersionComparison() {
+        check(UpdateVersion.isNewer("2.1.3", than: "2.1.2"), "Newer patch version is detected")
+        check(UpdateVersion.isNewer("v2.2.0", than: "2.1.9"), "Newer minor version is detected")
+        check(!UpdateVersion.isNewer("2.1.2", than: "2.1.2"), "Same version is not newer")
+        check(!UpdateVersion.isNewer("2.1.1", than: "2.1.2"), "Older version is not newer")
+        check(!UpdateVersion.isNewer("2.1.3", than: "dev"), "Dev builds are never prompted")
+        check(UpdateVersion.isNewer("3.0", than: "2.9.9"), "Missing components are treated as zero")
     }
 
     private static func testSettingsLimits() {
