@@ -2,6 +2,10 @@ import CoreGraphics
 
 enum DockClickDecision: Equatable {
     case passThrough(DockPassReason)
+    /// The modifier asks for the action the app is already configured to run,
+    /// so the configured action is toggled off. The click must reach the Dock
+    /// as a plain click, with Shift/Control stripped from the event.
+    case passThroughAsRegularClick
     case action(DockClickAction)
 }
 
@@ -64,10 +68,13 @@ struct DockClickPolicy {
             return .passThrough(.modifierKey)
         }
 
-        // A modifier action overrides the app's default. If it matches the
-        // configured action (for example Shift on an app already set to New
-        // Window), the result is unchanged: the same action still runs.
+        // A modifier toggles its action against the app's configured action.
+        // If the app is already set to that action, the toggle turns the
+        // configured behavior off and the Dock receives a plain click.
         if let modifierAction = Self.modifier(for: modifiers).action {
+            if configuredAction == modifierAction {
+                return .passThroughAsRegularClick
+            }
             return .action(modifierAction)
         }
 

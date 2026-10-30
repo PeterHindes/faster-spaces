@@ -704,14 +704,14 @@ struct SettingsView: View {
                 SettingsCard(title: "Dock click actions", systemImage: "dock.rectangle") {
                     SettingToggle(
                         title: "Enable Dock click actions",
-                        detail: "Normal Dock clicks use each app's action. Shift-click opens a new window and Control-click brings the window here; if that is already the app's action, nothing changes. Command and Option stay native.",
+                        detail: "Normal Dock clicks use each app's action. Shift-click opens a new window and Control-click brings the window here; if that action is already configured, the modifiers are stripped and the Dock receives a regular click. Command and Option stay native.",
                         isOn: $settings.dockClicksEnabled
                     )
                     if settings.dockClicksEnabled {
                         Divider()
                         SettingToggle(
                             title: "Control-click stays a left click",
-                            detail: "Strip Control from left-mouse events so macOS does not turn Control-click into a right-click. Control-click still brings the existing window here.",
+                            detail: "Strip Control from left-mouse events so macOS does not turn Control-click into a right-click. Intercepted Control-clicks still bring the existing window here.",
                             isOn: $settings.dockDisableControlClick
                         )
                         Divider()

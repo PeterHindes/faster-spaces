@@ -17,7 +17,7 @@ The Spaces gesture is intercepted before the Dock sees the animated swipe, and a
 - **Choose the swipe display** — the physical window swipe can show the compact Spaces-style HUD or the full-screen New Window Plz switcher. Both remain available in **Settings → Windows → Swipe display**.
 - **Live window thumbnails** — optional, off until you grant Screen Recording. Captured asynchronously after the switcher opens, only for current-Space windows, with app icons as the fallback. Screen Recording usually needs a fresh process, so the app automatically relaunches after the grant and restores the Settings/onboarding window you were in.
 - **Option-` returns to the previous Space** — jumps straight back to the Space you were on before, using the same instant gesture.
-- **Dock click actions** — choose what a normal Dock click does for each app (New Window, Bring Here, or None). Shift-click opens a new window and Control-click brings the existing window to the current Space; if that matches the app's configured action, the click is unchanged. Command- and Option-clicks stay native, and Shift/Control also work on unlisted apps. The first launch imports the per-app behaviors from an existing New Window Plz install.
+- **Dock click actions** — choose what a normal Dock click does for each app (New Window, Bring Here, or None). Shift-click opens a new window and Control-click brings the existing window to the current Space; if that action is already configured, the modifier is toggled off and the Dock receives a regular click. Command- and Option-clicks stay native, and Shift/Control also work on unlisted apps. The first launch imports the per-app behaviors from an existing New Window Plz install.
 - **Editable Caps Lock layer** — hold Caps Lock (or a chosen right-side modifier) and press a key. Unmapped keys **pass through unchanged** by default; add per-key mappings or use quick presets for WASD/HJKL/IJKL arrows, home-row symbols/functions, Space = Return, and Delete = Forward Delete. An optional “add Hyper modifiers” mode restores the old Hyper behavior for unmapped keys.
 - **Onboarding** — a four-step setup flow for Accessibility, optional Screen Recording, gesture choices, and the optional features. Re-run it from **Settings → General**.
 - **Seek** — an Accessibility-only text finder: type a phrase, pick a match from the focused app, and click it. No screen recording and no OCR.
@@ -68,7 +68,7 @@ Windows are focused with a private SkyLight front-process/key-window event, then
 
 ### Dock click actions
 
-A mouse event tap watches left/right clicks near the Dock. It asks the Dock's accessibility list which tile is selected, resolves the bundle, and looks it up in the user's app list. A normal click uses the app's configured action; unlisted apps and apps set to **None** keep the native Dock click. Holding Shift overrides the click to **New Window**, and holding Control overrides it to **Bring Here**, even for unlisted apps. If the modifier asks for the action the app already uses, the result is unchanged. Command- and Option-clicks pass through; Control wins if Shift and Control are both held. **New Window** presses the app's own New Window menu item (or falls back to ⌘N); **Bring Here** moves the existing window to the current Space through the WhichSpace-derived window-space backend. An optional HID-level Control-click filter keeps Control-click from becoming a right-click.
+A mouse event tap watches left/right clicks near the Dock. It asks the Dock's accessibility list which tile is selected, resolves the bundle, and looks it up in the user's app list. A normal click uses the app's configured action; unlisted apps and apps set to **None** keep the native Dock click. Holding Shift overrides the click to **New Window**, and holding Control overrides it to **Bring Here**, even for unlisted apps. If the modifier asks for the action the app already uses, the configured action is toggled off: the event is rewritten without Shift or Control and passed to the Dock as a regular click. Command- and Option-clicks pass through; Control wins if Shift and Control are both held. **New Window** presses the app's own New Window menu item (or falls back to ⌘N); **Bring Here** moves the existing window to the current Space through the WhichSpace-derived window-space backend. An optional HID-level Control-click filter keeps Control-click from becoming a right-click.
 
 ### Keyboard features
 
@@ -99,7 +99,7 @@ cd faster-spaces
 open "dist/Faster Spaces.app"
 ```
 
-The build produces `dist/Faster Spaces.app`. It is ad-hoc signed by default; if you have a local signing identity, set `FASTERSPACES_SIGN_IDENTITY` and optionally `FASTERSPACES_SIGN_KEYCHAIN`. A stable identity keeps the Accessibility grant across rebuilds.
+The build produces `dist/Faster Spaces.app`. Its version is taken from the last reachable `vX.Y.Z` git tag; a checkout with no version tag builds as `dev`. It is ad-hoc signed by default; if you have a local signing identity, set `FASTERSPACES_SIGN_IDENTITY` and optionally `FASTERSPACES_SIGN_KEYCHAIN`. A stable identity keeps the Accessibility grant across rebuilds.
 
 The source is organized as:
 
@@ -162,7 +162,7 @@ Developer-only commands (diagnostics, snapshots, synthetic test paths) are liste
 
 **Option-Tab does not open.** It is off in **Settings → Windows**, or there is only one current-Space window. Secure-input fields can also prevent global key taps from seeing Option-Tab.
 
-**Dock clicks do not change.** Enable **Settings → Dock → Enable Dock click actions** and add the app. A normal click uses the app's configured action; Shift-click and Control-click should work even for unlisted apps. Only running apps are intercepted, and Command/Option clicks are deliberately native.
+**Dock clicks do not change.** Enable **Settings → Dock → Enable Dock click actions** and add the app. A normal click uses the app's configured action; Shift-click and Control-click should work even for unlisted apps. If the modifier matches the app's configured action, it deliberately passes a regular click to the Dock. Only running apps are intercepted, and Command/Option clicks are deliberately native.
 
 **The Caps Lock layer does nothing.** Enable it in **Settings → Keyboard** and choose the layer key. Unmapped keys pass through by default, so add a mapping or a quick preset. If Caps Lock is the layer key, a quick tap can still toggle Caps Lock or send Escape depending on the quick-press setting. Some secure text fields block third-party key remapping.
 

@@ -1,16 +1,16 @@
 name: Release
 
-# Cut a release by bumping AppInfo.version and both Info.plist version keys,
-# pushing main, then pushing a matching tag:
+# Cut a release by pushing a version tag from main:
 #
 #   git tag v2.1.2
 #   git push origin main
 #   git push origin v2.1.2
 #
-# The tag must match the bundle version. The workflow builds the arm64 app,
-# runs the self-test, publishes Faster-Spaces.zip + its SHA-256 to a GitHub
-# Release, points the Pages download at that exact release, and requests a
-# Pages rebuild.
+# The tag is the version source: scripts/build.sh stamps the built bundle from
+# the last reachable vX.Y.Z tag, or "dev" when there is none. No source version
+# bump is needed. The workflow builds the arm64 app, runs the self-test,
+# publishes Faster-Spaces.zip + its SHA-256 to a GitHub Release, points the
+# Pages download at that exact release, and requests a Pages rebuild.
 
 on:
   push:
@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing release tag (for example v2.1.2). Leave empty to release the version on the selected branch."
+        description: "Existing release tag (for example v2.1.2). Leave empty to use the latest reachable tag."
         required: false
         type: string
 
@@ -66,27 +66,24 @@ jobs:
             tag="$REF_NAME"
           fi
 
-          version="$(plutil -extract CFBundleShortVersionString raw Resources/Info.plist)"
-          app_version="$(sed -n 's/.*static let version = "\([^"]*\)".*/\1/p' Sources/FasterSpaces/AppInfo.swift)"
-
           if [ -z "$tag" ]; then
-            tag="v$version"
+            tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+          fi
+          if [ -z "$tag" ]; then
+            echo "::error::No release tag found. Push a vX.Y.Z tag or pass one to workflow_dispatch."
+            exit 1
           fi
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Release tag must look like vX.Y.Z (got '$tag')."
             exit 1
           fi
-          case "$tag" in
-            "v$version"|"v$version"-*) ;;
-            *)
-              echo "::error::Tag '$tag' does not match Info.plist CFBundleShortVersionString '$version'. Bump the version before tagging."
-              exit 1
-              ;;
-          esac
-          if [ "$app_version" != "$version" ]; then
-            echo "::error::AppInfo.version '$app_version' does not match Info.plist '$version'."
+
+          resolved_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+          if [ "$resolved_tag" != "$tag" ]; then
+            echo "::error::Checked-out HEAD resolves to '$resolved_tag', not '$tag'. The build stamps its version from the last reachable tag."
             exit 1
           fi
+          version="${tag#v}"
 
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -153,7 +150,7 @@ jobs:
           test "$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")" = "$VERSION"
           file "$BIN" | grep -q "arm64"
           codesign --verify --strict --verbose=2 "$APP"
-          "$BIN" --version
+          test "$("$BIN" --version)" = "Faster Spaces $VERSION"
 
       - name: Package release artifact
         id: package

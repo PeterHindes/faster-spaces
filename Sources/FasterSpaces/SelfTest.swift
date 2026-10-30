@@ -131,13 +131,16 @@ enum SelfTest {
         check(decide([], .unchanged) == .passThrough(.noChanges), "Plain click on None passes through")
 
         check(decide([.maskShift], .moveHere) == .action(.newWindow), "Shift overrides Bring Here with New Window")
-        check(decide([.maskShift], .newWindow) == .action(.newWindow), "Shift on a New Window app is unchanged")
+        check(decide([.maskShift], .newWindow) == .passThroughAsRegularClick, "Shift toggles off configured New Window and passes a regular click")
         check(decide([.maskControl], .newWindow) == .action(.moveHere), "Control overrides New Window with Bring Here")
-        check(decide([.maskControl], .moveHere) == .action(.moveHere), "Control on a Bring Here app is unchanged")
+        check(decide([.maskControl], .moveHere) == .passThroughAsRegularClick, "Control toggles off configured Bring Here and passes a regular click")
 
         check(decide([.maskShift], nil) == .action(.newWindow), "Shift works on an unlisted app")
         check(decide([.maskControl], nil) == .action(.moveHere), "Control works on an unlisted app")
+        check(decide([.maskShift], .unchanged) == .action(.newWindow), "Shift works on an app set to None")
+        check(decide([.maskControl], .unchanged) == .action(.moveHere), "Control works on an app set to None")
         check(decide([.maskShift, .maskControl], .newWindow) == .action(.moveHere), "Control wins when both are held")
+        check(decide([.maskShift, .maskControl], .moveHere) == .passThroughAsRegularClick, "Control toggles off Bring Here when both are held")
 
         check(decide([.maskCommand], .newWindow) == .passThrough(.modifierKey), "Command-click stays native")
         check(decide([.maskAlternate], .moveHere) == .passThrough(.modifierKey), "Option-click stays native")

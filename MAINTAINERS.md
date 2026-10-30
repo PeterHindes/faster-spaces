@@ -1,6 +1,6 @@
 # Faster Spaces — Maintainer & Agent Handbook
 
-Last updated: 2026-10-30 · App version: 2.1.1 · Verified on macOS 27.0.1 (26A434), Apple Silicon
+Last updated: 2026-10-30 · App version: 2.1.2 · Verified on macOS 27.0.1 (26A434), Apple Silicon
 
 This document is for anyone changing Faster Spaces or building a similar
 Spaces/gesture utility. It describes the architecture, the private APIs we rely
@@ -534,15 +534,18 @@ open "dist/Faster Spaces.app"
 
 The script:
 
-1. kills any running `FasterSpaces`;
-2. compiles `Dock/WindowSpaceMove.c` with clang;
-3. compiles every Swift file under `Sources/FasterSpaces/` with
+1. derives the bundle version from the last reachable `vX.Y.Z` tag (or `dev`
+   when none is reachable);
+2. kills any running `FasterSpaces`;
+3. compiles `Dock/WindowSpaceMove.c` with clang;
+4. compiles every Swift file under `Sources/FasterSpaces/` with
    `-swift-version 5`, `-O`, `-target arm64-apple-macos13.0`;
-4. links the C object plus `SkyLight`, AppKit, SwiftUI, Combine,
+5. links the C object plus `SkyLight`, AppKit, SwiftUI, Combine,
    ServiceManagement;
-5. assembles `Resources/Info.plist` and `Resources/AppIcon.icns`;
-6. signs with the local identity if present, otherwise ad-hoc;
-7. verifies the signature.
+6. assembles `Resources/Info.plist` and `Resources/AppIcon.icns`, then stamps
+   `CFBundleShortVersionString` and `CFBundleVersion`;
+7. signs with the local identity if present, otherwise ad-hoc;
+8. verifies the signature.
 
 It uses a workspace-local module cache because restricted/sandboxed build
 environments may reject the default cache path. The UI deliberately avoids
@@ -550,14 +553,15 @@ SwiftUI `@State` macros in this repository (they can fail in a restricted
 plugin-server environment); use `ObservableObject` state as the existing views
 do.
 
-### Version bump
+### Versioning
 
-Update **both**:
-
-- `AppDelegate.version`
-- `Resources/Info.plist` `CFBundleShortVersionString` and `CFBundleVersion`
-
-Then rebuild, install, and package. Current version: **2.1.1**.
+`scripts/build.sh` runs `git describe --tags --abbrev=0` and accepts only a
+`vX.Y.Z` tag (pre-release suffixes are allowed). It writes the result into the
+built bundle's `CFBundleShortVersionString`; `CFBundleVersion` uses the same
+value for tagged builds and `1` for `dev`. `AppInfo.version` reads
+`CFBundleShortVersionString` at runtime, so no Swift or plist source needs
+editing. A checkout with no reachable version tag builds as **dev**. Do not
+hand-edit versions; tag the commit instead.
 
 ### Install for testing
 
@@ -572,8 +576,8 @@ The stable signature should preserve Accessibility. Check the log for
 
 ### Package and release
 
-Releases are automated by `.github/workflows/release.yml`. Bump the version
-(above), commit and push `main`, then push a matching tag:
+Releases are automated by `.github/workflows/release.yml`. Commit and push
+`main`, then push a version tag:
 
 ```sh
 git tag vX.Y.Z
@@ -581,10 +585,11 @@ git push origin main
 git push origin vX.Y.Z
 ```
 
-The tag must match `CFBundleShortVersionString`. The workflow fails before
-building if `vX.Y.Z`, the plist, and `AppInfo.version` disagree. It runs on
-GitHub's arm64 macOS 27 image (`xcode-27`), executes `./scripts/build.sh` and
-`--self-test`, then:
+The tag is the version source, so there is no version bump to commit. The
+workflow checks out the tag, confirms `git describe` resolves to it, and
+requires the built app's plist and `--version` output to report `X.Y.Z`. It
+runs on GitHub's arm64 macOS 27 image (`xcode-27`), executes
+`./scripts/build.sh` and `--self-test`, then:
 
 1. packages `dist/release/Faster-Spaces.zip` (with `Faster Spaces.app` at the
    archive root) and `Faster-Spaces.zip.sha256`;
@@ -661,6 +666,12 @@ the `releases/latest/download/...` fallback all depend on it. Pages deploys from
 - The visible site version (`data-release-version` in `docs/index.html`) is
   updated by `scripts/update-site-release.py` during a release. Run it manually
   if a release is published outside Actions.
+- The download counter is read in the browser from the public GitHub Releases
+  API (`download_count` on `Faster-Spaces.zip` across published releases) and
+  cached in `localStorage` for 15 minutes. There is intentionally no counter
+  workflow and no Pages rebuild. The unauthenticated API allows 60 requests per
+  hour per IP; the cache keeps normal use well below that. GitHub's count can
+  lag and includes maintainer or bot downloads.
 - Push with the existing auth helper if SSH is unavailable:
   `GIT_ASKPASS` + `gh auth token` is used in this environment.
 
@@ -867,15 +878,16 @@ Before changing code:
 7. Install to `/Applications` and check the log for tap installation.
 8. Re-test: single, multi-Space, reverse, edge, 3/4 fingers, Ctrl+arrow, HUD
    lifetime, menu/URL.
-9. Bump `AppInfo.version` and both Info.plist version strings.
-10. Cut the release by pushing a matching `vX.Y.Z` tag; the release workflow
-    packages the zip and SHA-256 and updates the site. Use the manual fallback
-    in [§9](#9-build-and-release) only when Actions is unavailable.
-11. Update README/docs/site copy if behavior changed; snapshot the settings
-    window if the UI changed.
-12. Commit only source/docs; never commit `build/`, `dist/`, or signing
+9. Update README/docs/site copy if behavior changed; snapshot the settings
+   window if the UI changed.
+10. Commit only source/docs; never commit `build/`, `dist/`, or signing
     material.
-13. Push, confirm Pages is `built`, and verify the latest release asset hash.
+11. Tag the release commit `vX.Y.Z`; rebuild and install if you want to verify
+    the tagged version locally (untagged builds report `dev`).
+12. Push `main` and the tag; the release workflow packages the zip and SHA-256
+    and updates the site. Use the manual fallback in
+    [§9](#9-build-and-release) only when Actions is unavailable.
+13. Confirm Pages is `built`, and verify the latest release asset hash.
 
 ### Quick commands
 
@@ -1134,17 +1146,21 @@ Known keyboard gaps (documented, not accidental):
   The C backend is WhichSpace-derived; keep its symbol scans and range checks.
 
 Policy invariants: only running, regular apps are intercepted; system
-launchers, non-running apps, Command/Option clicks, and drags pass through. A
-plain click runs the app's configured action; unlisted apps and apps set to
-None keep the native Dock click. Shift-click overrides to New Window and
-Control-click overrides to Bring Here, including for unlisted apps; when the
-requested action already matches the configured action, the result is
-unchanged. Control wins if both action modifiers are held. A click is cancelled
-if the pointer moves more than 10 pt or the press lasts more than 2 s.
+launchers, non-running apps, and Command/Option clicks pass through. A plain
+click runs the app's configured action; unlisted apps and apps set to None keep
+the native Dock click. Shift-click overrides to New Window and Control-click
+overrides to Bring Here, including for unlisted apps. When the requested action
+already matches the configured action, the modifier toggles it off:
+`DockEventTap` strips Shift/Control from the event (converting a
+Control-converted right click back to left) and passes a regular click to the
+Dock. `regularClickInProgress` carries that rewrite through drag and mouse-up.
+Control wins if both action modifiers are held. An action click is cancelled if
+the pointer moves more than 10 pt or the press lasts more than 2 s.
 
 `DockClickPolicy` is pure and covered by the `--self-test` cases. Keep the
 modifier precedence there rather than duplicating it in `DockEventTap`; the tap
-uses `DockClickPolicy.modifier(for:)` only to label the status message.
+uses `DockClickPolicy.modifier(for:)` only to label the status message and to
+decide which flags to strip.
 
 `DockStatusModel` is the only place the controller publishes status. Writes
 from the action/scan queues are hopped to main.
@@ -1219,9 +1235,10 @@ In addition to §10:
    restores the target app, text in images is absent by design.
 10. **Dock clicks**: default New Window, default Bring Here, and None; Shift
     opens a new window; Control brings the window here; Shift/Control on an
-    unlisted app; matching modifier/action pairs; Command/Option pass-through;
-    Control+Shift; picker; drag cancel. Confirm the old New Window Plz rules
-    were imported and that the per-app picker still works.
+    unlisted app; matching modifier/action pairs produce regular Dock clicks;
+    Command/Option pass-through; Control+Shift; picker; drag cancel. Confirm the
+    old New Window Plz rules were imported and that the per-app picker still
+    works.
 11. **Permissions**: revoke Accessibility while Dock clicks and the gesture tap
     are active; both stop and recover after regrant. Launch from the `.app`, not
     a terminal.

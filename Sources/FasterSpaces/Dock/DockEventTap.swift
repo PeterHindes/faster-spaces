@@ -17,6 +17,10 @@ final class DockEventTap {
     private var tapThread: Thread?
     private var pending: PendingClick?
     private var pendingPick: PendingPick?
+    /// Set while a modifier is toggling off a configured action. The original
+    /// click is rewritten to a plain click so the Dock never sees Shift or
+    /// Control, and the rewritten event is passed through.
+    private var regularClickInProgress = false
     private let pickerLock = NSLock()
     private var pickerActive = false
     private(set) var isRunning = false
@@ -137,6 +141,7 @@ final class DockEventTap {
         tapThread = nil
         pending = nil
         pendingPick = nil
+        regularClickInProgress = false
         isRunning = false
         Log.info("Dock event tap stopped.")
     }
@@ -151,6 +156,7 @@ final class DockEventTap {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             pending = nil
             pendingPick = nil
+            regularClickInProgress = false
             if let tap {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
@@ -167,6 +173,14 @@ final class DockEventTap {
             return handleMouseDown(event: event, isRight: true)
 
         case .leftMouseDragged, .rightMouseDragged:
+            if regularClickInProgress {
+                rewriteAsRegularClick(
+                    event: event,
+                    type: type,
+                    targetType: .leftMouseDragged
+                )
+                return Unmanaged.passUnretained(event)
+            }
             if var pendingPick {
                 let dx = event.location.x - pendingPick.point.x
                 let dy = event.location.y - pendingPick.point.y
@@ -188,6 +202,15 @@ final class DockEventTap {
             return nil
 
         case .leftMouseUp, .rightMouseUp:
+            if regularClickInProgress {
+                regularClickInProgress = false
+                rewriteAsRegularClick(
+                    event: event,
+                    type: type,
+                    targetType: .leftMouseUp
+                )
+                return Unmanaged.passUnretained(event)
+            }
             return handleMouseUp(event: event)
 
         default:
@@ -266,30 +289,55 @@ final class DockEventTap {
             modifiers: effectiveFlags,
             configuredAction: configuredAction
         )
-        guard case .action(let action) = decision else {
-            if case .passThrough(let reason) = decision {
-                Log.debug("Passing Dock click through (\(reason.rawValue)).")
+        switch decision {
+        case .action(let action):
+            guard let tile = hitTile,
+                  !DockSystemApps.isExcluded(tile),
+                  let application = RunningApplicationResolver.application(for: tile),
+                  application.activationPolicy == .regular else {
+                return Unmanaged.passUnretained(event)
             }
+
+            pending = PendingClick(
+                tile: tile,
+                pid: application.processIdentifier,
+                point: point,
+                startedAt: CACurrentMediaTime(),
+                action: action,
+                modifier: DockClickPolicy.modifier(for: effectiveFlags)
+            )
+            Log.debug("Intercepted Dock click for \(tile.title).")
+            return nil
+
+        case .passThroughAsRegularClick:
+            regularClickInProgress = true
+            rewriteAsRegularClick(
+                event: event,
+                type: isRight ? .rightMouseDown : .leftMouseDown,
+                targetType: .leftMouseDown
+            )
+            Log.debug("Toggled off the configured Dock action; passing a regular click.")
+            return Unmanaged.passUnretained(event)
+
+        case .passThrough(let reason):
+            Log.debug("Passing Dock click through (\(reason.rawValue)).")
             return Unmanaged.passUnretained(event)
         }
+    }
 
-        guard let tile = hitTile,
-              !DockSystemApps.isExcluded(tile),
-              let application = RunningApplicationResolver.application(for: tile),
-              application.activationPolicy == .regular else {
-            return Unmanaged.passUnretained(event)
+    /// The Dock must not see the toggle-off modifier. Strip Shift/Control and,
+    /// when Control-click was converted into a right click, turn the event back
+    /// into the matching left-mouse event.
+    private func rewriteAsRegularClick(event: CGEvent,
+                                       type: CGEventType,
+                                       targetType: CGEventType) {
+        event.flags.remove(.maskShift)
+        event.flags.remove(.maskControl)
+        event.setIntegerValueField(.eventSourceUserData, value: 0)
+        if type == .rightMouseDown || type == .rightMouseDragged || type == .rightMouseUp {
+            event.type = targetType
+            event.setIntegerValueField(.mouseEventButtonNumber, value: 0)
         }
-
-        pending = PendingClick(
-            tile: tile,
-            pid: application.processIdentifier,
-            point: point,
-            startedAt: CACurrentMediaTime(),
-            action: action,
-            modifier: DockClickPolicy.modifier(for: effectiveFlags)
-        )
-        Log.debug("Intercepted Dock click for \(tile.title).")
-        return nil
     }
 
     private func controlIsDown(event: CGEvent) -> Bool {

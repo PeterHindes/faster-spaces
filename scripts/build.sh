@@ -5,12 +5,31 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# The bundle version comes from the last reachable release tag, so a checkout
+# of v2.1.2 builds 2.1.2 without editing any source file. An untagged (or
+# non-git) checkout builds as "dev".
+TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+VERSION_SOURCE=""
+if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$ ]]; then
+    APP_VERSION="${TAG#v}"
+    VERSION_SOURCE=" (from $TAG)"
+else
+    APP_VERSION="dev"
+fi
+if [ "$APP_VERSION" = "dev" ]; then
+    APP_BUILD_VERSION="1"
+else
+    APP_BUILD_VERSION="$APP_VERSION"
+fi
+
 APP="$ROOT/dist/Faster Spaces.app"
 BIN="$APP/Contents/MacOS/FasterSpaces"
 BUILD="$ROOT/build"
 CACHE="$BUILD/modulecache"
 
 mkdir -p "$BUILD" "$CACHE" "$ROOT/dist"
+
+echo "==> Version $APP_VERSION$VERSION_SOURCE"
 
 echo "==> Compiling"
 # Kill an old instance so the linker can replace the binary cleanly.
@@ -49,6 +68,8 @@ swiftc \
     -o "$BIN"
 
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
+plutil -replace CFBundleShortVersionString -string "$APP_VERSION" "$APP/Contents/Info.plist"
+plutil -replace CFBundleVersion -string "$APP_BUILD_VERSION" "$APP/Contents/Info.plist"
 cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ROOT/Resources/OverlayShaders.metal.txt" "$APP/Contents/Resources/OverlayShaders.metal.txt"
 chmod +x "$BIN"
