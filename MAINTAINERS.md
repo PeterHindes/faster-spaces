@@ -1,6 +1,6 @@
 # Faster Spaces — Maintainer & Agent Handbook
 
-Last updated: 2026-10-30 · App version: 2.1.2 · Verified on macOS 27.0.1 (26A434), Apple Silicon
+Last updated: 2026-10-30 · App version: 2.2.0 · Verified on macOS 27.0.1 (26A434), Apple Silicon
 
 This document is for anyone changing Faster Spaces or building a similar
 Spaces/gesture utility. It describes the architecture, the private APIs we rely
