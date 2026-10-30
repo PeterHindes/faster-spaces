@@ -828,6 +828,12 @@ struct SettingsView: View {
                         detail: "Display the current Space as a small counter next to the icon.",
                         isOn: $settings.showSpaceInMenuBar
                     )
+                    .disabled(settings.showAllSpacesInMenuBar)
+                    SettingToggle(
+                        title: "Show every Space in the menu bar",
+                        detail: "Show each Space as a clickable number next to the icon. Off by default.",
+                        isOn: $settings.showAllSpacesInMenuBar
+                    )
                     SettingToggle(
                         title: "Trackpad feedback",
                         detail: "A subtle haptic tick each time a Space or window is crossed.",
@@ -903,10 +909,12 @@ struct SettingsView: View {
 
                 SettingsCard(title: "Troubleshooting", systemImage: "stethoscope") {
                     HStack(spacing: 8) {
-                        Button("Diagnostics…") {
-                            NotificationCenter.default.post(name: .fasterSpacesShowDiagnostics, object: nil)
+                        if !BuildMode.isRelease {
+                            Button("Diagnostics…") {
+                                NotificationCenter.default.post(name: .fasterSpacesShowDiagnostics, object: nil)
+                            }
+                            Button("Open log") { Log.revealInFinder() }
                         }
-                        Button("Open log") { Log.revealInFinder() }
                         Spacer()
                         Button("Reset Accessibility…") { ui.showResetConfirmation = true }
                             .disabled(!accessibility.isTrusted)

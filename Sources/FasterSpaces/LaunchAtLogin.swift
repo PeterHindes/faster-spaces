@@ -46,14 +46,16 @@ enum LaunchAtLogin {
         let directory = plistURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-        let plist: [String: Any] = [
+        var plist: [String: Any] = [
             "Label": label,
             "ProgramArguments": [executable],
             "RunAtLoad": true,
             "ProcessType": "Interactive",
             "LimitLoadToSessionType": "Aqua",
-            "StandardErrorPath": Log.fileURL.path,
         ]
+        if !BuildMode.isRelease {
+            plist["StandardErrorPath"] = Log.fileURL.path
+        }
 
         do {
             let data = try PropertyListSerialization.data(

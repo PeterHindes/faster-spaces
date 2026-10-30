@@ -132,6 +132,8 @@ jobs:
           xcodebuild -version
 
       - name: Build app bundle
+        env:
+          FASTERSPACES_BUILD_MODE: release
         run: ./scripts/build.sh
 
       - name: Run self-test

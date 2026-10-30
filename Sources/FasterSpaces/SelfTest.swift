@@ -20,6 +20,7 @@ enum SelfTest {
         testWindowCatalog()
         testDockClickPolicy()
         testVersionComparison()
+        testMenuBarSpaceStrip()
         testSettingsLimits()
 
         print("")
@@ -157,6 +158,14 @@ enum SelfTest {
         check(!UpdateVersion.isNewer("2.1.1", than: "2.1.2"), "Older version is not newer")
         check(!UpdateVersion.isNewer("2.1.3", than: "dev"), "Dev builds are never prompted")
         check(UpdateVersion.isNewer("3.0", than: "2.9.9"), "Missing components are treated as zero")
+    }
+
+    private static func testMenuBarSpaceStrip() {
+        check(MenuBarSpaceStrip.index(atX: 0, width: 60, count: 3) == 0, "Menu strip maps the left edge to the first Space")
+        check(MenuBarSpaceStrip.index(atX: 30, width: 60, count: 3) == 1, "Menu strip maps the middle to the second Space")
+        check(MenuBarSpaceStrip.index(atX: 59, width: 60, count: 3) == 2, "Menu strip maps the right edge to the last Space")
+        check(MenuBarSpaceStrip.index(atX: 10, width: 0, count: 3) == 0, "Menu strip handles a zero-width button")
+        check(MenuBarSpaceStrip.index(atX: 10, width: 60, count: 1) == 0, "Menu strip handles a single Space")
     }
 
     private static func testSettingsLimits() {

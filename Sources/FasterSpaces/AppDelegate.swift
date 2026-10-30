@@ -31,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private let controlClickFilter = ControlClickFilter()
 
     private var statusItem: NSStatusItem!
+    private var spacesStatusItem: NSStatusItem?
     private let statusMenu = NSMenu()
     private var settingsWindow: NSWindow?
     private var onboardingWindow: NSWindow?
@@ -143,7 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let snapshot = switcher.snapshot()
         button.image = menuBarImage()
         button.image?.isTemplate = true
-        if settings.showSpaceInMenuBar, let snapshot {
+        if settings.showSpaceInMenuBar, !settings.showAllSpacesInMenuBar, let snapshot {
             button.title = " \(snapshot.currentNumber)/\(snapshot.spaceCount)"
             button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         } else {
@@ -154,6 +155,87 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         } else {
             button.toolTip = "Faster Spaces · \(settings.fingerSummary)"
         }
+        updateSpacesStatusItem(snapshot)
+    }
+
+    /// Optional row of every Space next to the menu-bar icon. Each number is
+    /// part of one status item, so a click can jump straight to that Space.
+    private func updateSpacesStatusItem(_ snapshot: SpaceSnapshot?) {
+        guard settings.showAllSpacesInMenuBar,
+              let snapshot,
+              snapshot.spaceCount > 1 else {
+            if let item = spacesStatusItem {
+                NSStatusBar.system.removeStatusItem(item)
+                spacesStatusItem = nil
+            }
+            return
+        }
+
+        if spacesStatusItem == nil {
+            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+            item.button?.target = self
+            item.button?.action = #selector(spaceStripClicked(_:))
+            item.button?.sendAction(on: [.leftMouseUp])
+            item.button?.setAccessibilityLabel("Spaces")
+            item.button?.setAccessibilityHelp("Click a Space number to switch to it")
+            spacesStatusItem = item
+        }
+        guard let item = spacesStatusItem, let button = item.button else { return }
+
+        let count = snapshot.spaceCount
+        let current = switcher.logicalCurrentIndex(for: snapshot) + 1
+        let regularFont = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        let currentFont = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .bold)
+        let title = NSMutableAttributedString()
+
+        for number in 1...count {
+            if number > 1 {
+                title.append(NSAttributedString(string: " ", attributes: [.font: regularFont]))
+            }
+            let isCurrent = number == current
+            title.append(
+                NSAttributedString(
+                    string: "\(number)",
+                    attributes: [
+                        .font: isCurrent ? currentFont : regularFont,
+                        .foregroundColor: isCurrent ? NSColor.controlAccentColor : NSColor.labelColor,
+                    ]
+                )
+            )
+        }
+
+        button.attributedTitle = title
+        button.toolTip = "Faster Spaces — click a Space number to switch"
+        item.length = ceil(title.size().width) + 12
+        Log.debug("Space strip: \(count) space(s), \(Int(item.length)) px")
+    }
+
+    @objc private func spaceStripClicked(_ sender: NSStatusBarButton) {
+        guard settings.showAllSpacesInMenuBar,
+              let snapshot = switcher.snapshot(),
+              snapshot.spaceCount > 1,
+              sender.bounds.width > 0,
+              let event = NSApp.currentEvent else {
+            return
+        }
+
+        let point = sender.convert(event.locationInWindow, from: nil)
+        let target = MenuBarSpaceStrip.index(
+            atX: point.x,
+            width: sender.bounds.width,
+            count: snapshot.spaceCount
+        )
+        let current = switcher.logicalCurrentIndex(for: snapshot)
+        guard target != current else { return }
+
+        Log.debug("Space strip click: \(current + 1) -> \(target + 1)")
+        let direction = target > current ? 1 : -1
+        switcher.switchBy(
+            steps: abs(target - current),
+            direction: direction,
+            reason: "menu-bar"
+        )
+        updateStatusItem()
     }
 
     private func configureMenu() {
@@ -396,14 +478,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         preferences.target = self
         menu.addItem(preferences)
 
-        let diagnostics = NSMenuItem(
-            title: "Diagnostics…",
-            action: #selector(openDiagnosticsAction),
-            keyEquivalent: "d"
-        )
-        diagnostics.keyEquivalentModifierMask = [.command, .option]
-        diagnostics.target = self
-        menu.addItem(diagnostics)
+        if !BuildMode.isRelease {
+            let diagnostics = NSMenuItem(
+                title: "Diagnostics…",
+                action: #selector(openDiagnosticsAction),
+                keyEquivalent: "d"
+            )
+            diagnostics.keyEquivalentModifierMask = [.command, .option]
+            diagnostics.target = self
+            menu.addItem(diagnostics)
+        }
 
         let launch = NSMenuItem(
             title: "Launch at Login",
@@ -781,6 +865,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     private func showDiagnostics() {
+        guard !BuildMode.isRelease else { return }
         if diagnosticsWindow == nil {
             diagnosticsWindow = makeWindow(
                 title: "Faster Spaces Diagnostics",
@@ -1059,6 +1144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         case "check-updates":
             UpdateChecker.shared.check()
         case "diagnostics":
+            guard !BuildMode.isRelease else { return }
             showDiagnostics()
         case "onboarding":
             showOnboarding()
@@ -1188,5 +1274,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         default:
             showSettings()
         }
+    }
+}
+
+/// Pure hit-testing for the optional menu-bar Space strip. Exposed separately
+/// so the self-test can exercise the mapping without a status item.
+enum MenuBarSpaceStrip {
+    static func index(atX x: CGFloat, width: CGFloat, count: Int) -> Int {
+        guard count > 0, width > 0 else { return 0 }
+        let fraction = min(max(x / width, 0), 0.9999)
+        return min(count - 1, Int(fraction * CGFloat(count)))
     }
 }

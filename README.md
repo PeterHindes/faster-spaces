@@ -28,6 +28,7 @@ The Spaces gesture is intercepted before the Dock sees the animated swipe, and a
 - **Ctrl+← / Ctrl+→** — the same instant switch from the keyboard, but only while macOS still has the “Move left/right a space” shortcut enabled and assigned to those keys. Remap or disable it in System Settings and the keys pass through untouched.
 - **Launch at login** — backed by a per-user LaunchAgent; enabled during onboarding and toggleable in Settings.
 - **Optional Space counter** in the menu bar.
+- **Menu-bar Space strip** — optionally show every Space as a clickable number next to the icon and jump straight to one with a click. Off by default.
 - **Trackpad haptics** — a quiet tick for each Space crossed.
 - **Empty-desktop guard** — prevents macOS from yanking you to another Space after landing on an empty one.
 - **Local and private** — no telemetry, no account, and no background network access. Keystrokes are processed locally for the optional layer and are never stored or transmitted. Screen Recording is requested only if you enable window thumbnails; otherwise the app never captures the screen. The only network request is the update check you trigger, which reads a small version file from the project website.
@@ -101,6 +102,8 @@ open "dist/Faster Spaces.app"
 ```
 
 The build produces `dist/Faster Spaces.app`. Its version is taken from the last reachable `vX.Y.Z` git tag; a checkout with no version tag builds as `dev`. It is ad-hoc signed by default; if you have a local signing identity, set `FASTERSPACES_SIGN_IDENTITY` and optionally `FASTERSPACES_SIGN_KEYCHAIN`. A stable identity keeps the Accessibility grant across rebuilds.
+
+Development builds (the default) write `~/Library/Logs/FasterSpaces.log` and include the Diagnostics window and log buttons. Build the shipping variant with `./scripts/build.sh --release` (or `FASTERSPACES_BUILD_MODE=release`); it does not create or write a log file and has no diagnostics menus.
 
 The source is organized as:
 

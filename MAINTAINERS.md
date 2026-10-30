@@ -1,6 +1,6 @@
 # Faster Spaces — Maintainer & Agent Handbook
 
-Last updated: 2026-10-30 · App version: 2.2.0 · Verified on macOS 27.0.1 (26A434), Apple Silicon
+Last updated: 2026-10-30 · App version: 2.2.1 · Verified on macOS 27.0.1 (26A434), Apple Silicon
 
 This document is for anyone changing Faster Spaces or building a similar
 Spaces/gesture utility. It describes the architecture, the private APIs we rely
@@ -529,24 +529,37 @@ The app is **Apple Silicon (arm64)**, minimum macOS 13.0 according to the plist;
 ### Build
 
 ```sh
-./scripts/build.sh
+./scripts/build.sh            # development: log file + Diagnostics UI
+./scripts/build.sh --release  # shipping: no log file, no diagnostics menus
 open "dist/Faster Spaces.app"
 ```
 
 The script:
 
-1. derives the bundle version from the last reachable `vX.Y.Z` tag (or `dev`
+1. accepts `--release` (or `FASTERSPACES_BUILD_MODE=release`) and compiles
+   release builds with `-D FASTERSPACES_RELEASE`;
+2. derives the bundle version from the last reachable `vX.Y.Z` tag (or `dev`
    when none is reachable);
-2. kills any running `FasterSpaces`;
-3. compiles `Dock/WindowSpaceMove.c` with clang;
-4. compiles every Swift file under `Sources/FasterSpaces/` with
+3. kills any running `FasterSpaces`;
+4. compiles `Dock/WindowSpaceMove.c` with clang;
+5. compiles every Swift file under `Sources/FasterSpaces/` with
    `-swift-version 5`, `-O`, `-target arm64-apple-macos13.0`;
-5. links the C object plus `SkyLight`, AppKit, SwiftUI, Combine,
-   ServiceManagement;
-6. assembles `Resources/Info.plist` and `Resources/AppIcon.icns`, then stamps
+6. links the C object plus `SkyLight`, AppKit, SwiftUI, Combine,
+   `ServiceManagement`;
+7. assembles `Resources/Info.plist` and `Resources/AppIcon.icns`, then stamps
    `CFBundleShortVersionString` and `CFBundleVersion`;
-7. signs with the local identity if present, otherwise ad-hoc;
-8. verifies the signature.
+8. signs with the local identity if present, otherwise ad-hoc;
+9. verifies the signature.
+
+### Logging and build modes
+
+Development builds write `~/Library/Logs/FasterSpaces.log`, point the login
+agent's `StandardErrorPath` at it, and expose the Diagnostics window, the
+Diagnostics menu item, and the Settings log buttons. Release builds are
+compiled with `FASTERSPACES_RELEASE`, which turns every `Log` call into a no-op,
+removes the login agent's stderr path, and hides the diagnostics UI. Existing
+log files are left on disk; a release build simply stops writing to them. The
+release workflow sets `FASTERSPACES_BUILD_MODE=release`.
 
 It uses a workspace-local module cache because restricted/sandboxed build
 environments may reject the default cache path. The UI deliberately avoids

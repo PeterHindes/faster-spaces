@@ -5,6 +5,39 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Release builds drop the on-disk log and diagnostics UI. Development builds
+# keep them. Both accept the version from the tag as before.
+MODE="${FASTERSPACES_BUILD_MODE:-development}"
+for arg in "$@"; do
+    case "$arg" in
+        --release|release) MODE="release" ;;
+        --debug|debug|development) MODE="development" ;;
+        -h|--help)
+            echo "usage: $0 [--release|--debug]"
+            echo "  or: FASTERSPACES_BUILD_MODE=release $0"
+            exit 0
+            ;;
+        *)
+            echo "unknown option: $arg" >&2
+            exit 2
+            ;;
+    esac
+done
+if [ "$MODE" = "debug" ]; then
+    MODE="development"
+fi
+case "$MODE" in
+    release|development) ;;
+    *)
+        echo "invalid build mode: $MODE (use release or development)" >&2
+        exit 2
+        ;;
+esac
+SWIFT_DEFINES=""
+if [ "$MODE" = "release" ]; then
+    SWIFT_DEFINES="-D FASTERSPACES_RELEASE"
+fi
+
 # The bundle version comes from the last reachable release tag, so a checkout
 # of v2.1.2 builds 2.1.2 without editing any source file. An untagged (or
 # non-git) checkout builds as "dev".
@@ -30,6 +63,7 @@ CACHE="$BUILD/modulecache"
 mkdir -p "$BUILD" "$CACHE" "$ROOT/dist"
 
 echo "==> Version $APP_VERSION$VERSION_SOURCE"
+echo "==> Build mode: $MODE"
 
 echo "==> Compiling"
 # Kill an old instance so the linker can replace the binary cleanly.
@@ -51,6 +85,7 @@ SWIFT_SOURCES=$(find Sources/FasterSpaces -name '*.swift' | sort)
 swiftc \
     -swift-version 5 \
     -O \
+    $SWIFT_DEFINES \
     -module-cache-path "$CACHE" \
     -target arm64-apple-macos13.0 \
     -F /System/Library/PrivateFrameworks \

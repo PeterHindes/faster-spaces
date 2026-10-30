@@ -21,10 +21,8 @@ enum Log {
     }()
 
     static let fileURL: URL = {
-        let logs = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs", isDirectory: true)
-        try? FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
-        return logs.appendingPathComponent("FasterSpaces.log")
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/FasterSpaces.log")
     }()
 
     static var isDebugEnabled: Bool {
@@ -45,6 +43,8 @@ enum Log {
     }
 
     private static func write(_ level: Level, _ message: String) {
+        guard !BuildMode.isRelease else { return }
+
         let stamp = formatter.string(from: Date())
         let line = "\(stamp) [\(level.rawValue)] \(message)\n"
         lock.lock()
@@ -55,6 +55,10 @@ enum Log {
         lock.unlock()
 
         if let data = line.data(using: .utf8) {
+            try? FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             if let handle = try? FileHandle(forWritingTo: fileURL) {
                 defer { try? handle.close() }
                 _ = try? handle.seekToEnd()
@@ -74,6 +78,7 @@ enum Log {
     }
 
     static func clear() {
+        guard !BuildMode.isRelease else { return }
         lock.lock()
         lines.removeAll()
         lock.unlock()
@@ -82,6 +87,7 @@ enum Log {
     }
 
     static func revealInFinder() {
+        guard !BuildMode.isRelease else { return }
         NSWorkspace.shared.activateFileViewerSelecting([fileURL])
     }
 }

@@ -22,6 +22,7 @@ final class SettingsStore: ObservableObject {
         static let invertDirection = "invertDirection"
         static let yankGuardEnabled = "yankGuardEnabled"
         static let showSpaceInMenuBar = "showSpaceInMenuBar"
+        static let showAllSpacesInMenuBar = "showAllSpacesInMenuBar"
         static let debugLogging = "debugLogging"
         static let hapticFeedback = "hapticFeedback"
         static let completedOnboarding = "completedOnboarding"
@@ -112,6 +113,10 @@ final class SettingsStore: ObservableObject {
 
     @Published var showSpaceInMenuBar: Bool {
         didSet { defaults.set(showSpaceInMenuBar, forKey: Key.showSpaceInMenuBar) }
+    }
+
+    @Published var showAllSpacesInMenuBar: Bool {
+        didSet { defaults.set(showAllSpacesInMenuBar, forKey: Key.showAllSpacesInMenuBar) }
     }
 
     @Published var debugLogging: Bool {
@@ -340,6 +345,7 @@ final class SettingsStore: ObservableObject {
         invertDirection = defaults.bool(forKey: Key.invertDirection)
         yankGuardEnabled = defaults.object(forKey: Key.yankGuardEnabled) as? Bool ?? true
         showSpaceInMenuBar = defaults.bool(forKey: Key.showSpaceInMenuBar)
+        showAllSpacesInMenuBar = defaults.bool(forKey: Key.showAllSpacesInMenuBar)
         debugLogging = defaults.bool(forKey: Key.debugLogging)
         hapticFeedback = defaults.object(forKey: Key.hapticFeedback) as? Bool ?? true
         completedOnboarding = defaults.bool(forKey: Key.completedOnboarding)
