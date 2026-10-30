@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Faster Spaces — instant macOS Spaces switching</title>
-  <meta name="description" content="Faster Spaces removes the slide from macOS Spaces. Keep your normal three- or four-finger swipe, cross several desktops in one gesture, and swipe back to retrace them. Free and open source.">
+  <title>Faster Spaces — Spaces, windows, and keyboard</title>
+  <meta name="description" content="Faster Spaces removes the slide from macOS Spaces, then uses the other finger count to switch windows. Optional Option-Tab with live thumbnails, Dock click actions, an editable Caps Lock layer, and Accessibility-only Seek.">
   <meta name="theme-color" content="#0a0c16">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Faster Spaces — instant macOS Spaces switching">
-  <meta property="og:description" content="Your Spaces gesture, without the slide. Free, open-source menu-bar app for macOS.">
+  <meta property="og:title" content="Faster Spaces — Spaces, windows, and keyboard">
+  <meta property="og:description" content="Spaces, windows, and keyboard — without the slide. Free, open-source menu-bar app for macOS.">
   <meta property="og:image" content="https://peterhindes.github.io/faster-spaces/social.png">
   <meta property="og:url" content="https://peterhindes.github.io/faster-spaces/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Faster Spaces — instant macOS Spaces switching">
-  <meta name="twitter:description" content="Your Spaces gesture, without the slide.">
+  <meta name="twitter:title" content="Faster Spaces — Spaces, windows, and keyboard">
+  <meta name="twitter:description" content="Spaces, windows, and keyboard — without the slide.">
   <meta name="twitter:image" content="https://peterhindes.github.io/faster-spaces/social.png">
   <link rel="icon" href="icon.png" type="image/png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -39,7 +39,7 @@
           <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
           <span>GitHub</span>
         </a>
-        <a class="button button-small" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip">Download</a>
+        <a class="button button-small" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip" data-release-download>Download</a>
       </div>
     </div>
   </header>
@@ -48,16 +48,16 @@
     <section class="hero shell">
       <div class="hero-copy">
         <p class="eyebrow"><span class="dot"></span> Free &amp; open source · macOS 27</p>
-        <h1>Switch Spaces.<br><span class="gradient">Instantly.</span></h1>
-        <p class="lede">Faster Spaces removes the slide from macOS Spaces. Your normal three- or four-finger swipe still works — it just arrives instantly. Keep swiping to cross several desktops, and swipe back to retrace them.</p>
+        <h1>Switch Spaces.<br><span class="gradient">Switch Windows.</span></h1>
+        <p class="lede">Faster Spaces removes the slide from macOS Spaces. Your normal swipe still works — it just arrives instantly. The finger count macOS is not using for Spaces switches windows in the same Space. Option-Tab (with optional live thumbnails), Dock click actions, an editable Caps Lock layer, and an Accessibility-only Seek are optional extras.</p>
         <div class="cta-row">
-          <a class="button button-primary" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip">
+          <a class="button button-primary" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip" data-release-download>
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
             Download for macOS
           </a>
           <a class="button button-ghost" href="https://github.com/PeterHindes/faster-spaces">View source</a>
         </div>
-        <p class="micro">MIT licensed · no telemetry · no screen recording · no account · no SIP changes · Ctrl+←/→ when assigned</p>
+        <p class="micro">MIT licensed · no telemetry · no account · no SIP changes · optional Screen Recording for thumbnails · Ctrl+←/→ when assigned</p>
       </div>
 
       <div class="hero-visual" aria-label="Faster Spaces settings window">
@@ -66,7 +66,7 @@
             <span class="light red"></span><span class="light yellow"></span><span class="light green"></span>
             <span class="window-title">Faster Spaces Settings</span>
           </div>
-          <img src="settings.png" alt="Faster Spaces settings: gesture, multiple Spaces, distance per Space, and haptics controls." width="1280" height="1520">
+          <img src="settings.png" alt="Faster Spaces settings: Spaces, Windows, Keyboard, Dock, and General sections." width="1280" height="1384">
         </div>
         <div class="glow" aria-hidden="true"></div>
       </div>
@@ -74,7 +74,7 @@
 
     <section class="stat-strip shell" aria-label="At a glance">
       <div><strong>0</strong><span>animation frames</span></div>
-      <div><strong>3 / 4</strong><span>fingers, as configured</span></div>
+      <div><strong>Spaces + Windows</strong><span>the other finger count switches windows</span></div>
       <div><strong>1–8</strong><span>Spaces per gesture</span></div>
       <div><strong>100%</strong><span>local &amp; private</span></div>
     </section>
@@ -100,7 +100,7 @@
             <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a2 2 0 0 1 2 2v3h-2V5H7v14h4v2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm7 7h5a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/></svg>
           </div>
           <h3>Follows your trackpad</h3>
-          <p>Reads the current macOS Spaces finger setting and ignores the other count. A 4-finger swipe does nothing when macOS is set to 3, and vice versa.</p>
+          <p>The primary finger count follows macOS Spaces. The other count is the window swipe: if macOS uses three fingers for Spaces, four fingers move through the current Space's windows, and vice versa.</p>
         </article>
 
         <article class="card feature-card">
@@ -141,9 +141,9 @@
       <div class="split-copy">
         <p class="eyebrow">Under the hood</p>
         <h2>It uses the Dock's own pipeline.</h2>
-        <p class="muted">Faster Spaces does not move windows or fake Mission Control. It listens for the private Dock-swipe gesture, suppresses the animated original, and posts a complete synthetic gesture through the same path macOS uses. Mission Control, focus, wallpaper, full-screen apps and the Dock all stay in sync.</p>
+        <p class="muted">The Spaces gesture does not fake Mission Control. It listens for the private Dock-swipe gesture, suppresses the animated original, and posts a complete synthetic gesture through the same path macOS uses. Mission Control, focus, wallpaper, full-screen apps and the Dock all stay in sync. Separate, opt-in features switch windows, move a Dock app's window here, and remap keys.</p>
         <ol class="steps">
-          <li><span>01</span><div><strong>Catch the gesture</strong><p>A CGEventTap watches Dock-control events before the Dock sees them. A raw-touch check keeps only the finger count macOS is configured for; vertical Mission Control swipes are never touched.</p></div></li>
+          <li><span>01</span><div><strong>Catch the gesture</strong><p>A CGEventTap watches Dock-control events before the Dock sees them. A raw-touch check routes the configured Spaces count to Spaces and the other count to the window switcher; vertical Mission Control swipes are never touched.</p></div></li>
           <li><span>02</span><div><strong>Replace the travel</strong><p>The animated event is swallowed. A three-phase synthetic swipe is posted with almost no progress and a strong terminal velocity.</p></div></li>
           <li><span>03</span><div><strong>Land instantly</strong><p>The Dock commits the switch but has no distance left to animate. On macOS 27 a serialized IOHID payload makes the synthetic gesture pass validation.</p></div></li>
         </ol>
@@ -216,7 +216,11 @@
           <span class="step-badge">1</span>
           <h3>Download &amp; unzip</h3>
           <p>Grab the latest release, unzip it, and drag <strong>Faster Spaces.app</strong> into <code>/Applications</code>.</p>
-          <a class="text-link" href="https://github.com/PeterHindes/faster-spaces/releases/latest">All releases →</a>
+          <p class="release-meta">
+            <span>Version: <strong data-release-version>2.1.1</strong></span>
+            <a class="text-link" href="https://github.com/PeterHindes/faster-spaces/releases/latest/download/Faster-Spaces.zip.sha256" data-release-checksum>SHA-256</a>
+            <a class="text-link" href="https://github.com/PeterHindes/faster-spaces/releases/latest">All releases →</a>
+          </p>
         </article>
         <article class="card install-card">
           <span class="step-badge">2</span>
@@ -227,7 +231,7 @@
         <article class="card install-card">
           <span class="step-badge">3</span>
           <h3>Grant Accessibility</h3>
-          <p>Open the welcome window and click <strong>Grant Access…</strong>, then enable <strong>Faster Spaces</strong> in System Settings → Privacy &amp; Security → Accessibility. Swipe normally.</p>
+          <p>Follow the onboarding flow: grant <strong>Accessibility</strong>, then optionally grant <strong>Screen Recording</strong> for window thumbnails. Choose the swipe display and optional features. Swipe normally for Spaces, or use the other finger count for windows.</p>
           <a class="text-link" href="#faq">Why is this needed? →</a>
         </article>
       </div>
@@ -245,7 +249,7 @@
       <div class="faq">
         <details open>
           <summary>Why does it need Accessibility permission?</summary>
-          <p>macOS only lets trusted apps replace synthetic input. Faster Spaces uses that access to read the Dock's private gesture stream and post the instant replacement. It does not read keystrokes, screen contents, or any other input.</p>
+          <p>macOS only lets trusted apps replace synthetic input. Faster Spaces uses that access to read the Dock's private gesture stream, post the instant replacement, and run the keyboard layer and Dock features. Keystrokes are processed locally and never stored or transmitted. Screen Recording is optional and used only for the window thumbnails you enable; there is no network access or telemetry.</p>
         </details>
         <details>
           <summary>Does it disable SIP or modify system files?</summary>
@@ -253,7 +257,7 @@
         </details>
         <details>
           <summary>Will it work with 3 fingers and 4 fingers?</summary>
-          <p>Yes, automatically. Faster Spaces intercepts the Spaces gesture the Dock already receives, so it follows whatever is configured in System Settings → Trackpad → More Gestures. There is no second setting.</p>
+          <p>Yes. The finger count configured in System Settings → Trackpad → More Gestures switches Spaces; the other count switches windows. Both can be overridden in Settings if your setup is unusual.</p>
         </details>
         <details>
           <summary>What happens to Mission Control and App Exposé?</summary>

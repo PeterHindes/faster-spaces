@@ -19,6 +19,16 @@ pkill -x FasterSpaces 2>/dev/null || true
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
+# WhichSpace's window-to-Space move backend (MIT). Compiled as C so the
+# bridged Objective-C runtime lookup and retain/release are explicit. Swift
+# reaches the global WSMove* symbols through @_silgen_name.
+echo "==> Compiling window-space backend"
+clang -O2 -target arm64-apple-macos13.0 \
+    -c Sources/FasterSpaces/Dock/WindowSpaceMove.c \
+    -o "$BUILD/WindowSpaceMove.o"
+
+SWIFT_SOURCES=$(find Sources/FasterSpaces -name '*.swift' | sort)
+
 swiftc \
     -swift-version 5 \
     -O \
@@ -30,11 +40,17 @@ swiftc \
     -framework SwiftUI \
     -framework Combine \
     -framework ServiceManagement \
-    Sources/FasterSpaces/*.swift \
+    -framework Metal \
+    -framework MetalKit \
+    -framework CoreText \
+    -framework ImageIO \
+    $SWIFT_SOURCES \
+    "$BUILD/WindowSpaceMove.o" \
     -o "$BIN"
 
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
 cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+cp "$ROOT/Resources/OverlayShaders.metal.txt" "$APP/Contents/Resources/OverlayShaders.metal.txt"
 chmod +x "$BIN"
 
 plutil -lint "$APP/Contents/Info.plist" >/dev/null

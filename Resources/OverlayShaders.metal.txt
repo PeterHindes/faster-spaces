@@ -1,0 +1,159 @@
+#include <metal_stdlib>
+using namespace metal;
+
+struct BackgroundUniforms {
+    float2 resolution;
+    float2 cardCenter;
+    float2 cardHalfSize;
+    float time;
+    float intro;
+};
+
+struct TextVertex {
+    float2 position;
+    float2 texCoord;
+};
+
+struct TextUniforms {
+    float2 resolution;
+    float4 color;
+};
+
+struct BackgroundOut {
+    float4 position [[position]];
+};
+
+vertex BackgroundOut overlay_background_vertex(uint vertexID [[vertex_id]]) {
+    float2 positions[3] = {
+        float2(-1.0, -1.0),
+        float2( 3.0, -1.0),
+        float2(-1.0,  3.0)
+    };
+    BackgroundOut out;
+    out.position = float4(positions[vertexID], 0.0, 1.0);
+    return out;
+}
+
+static float roundedBoxSDF(float2 point, float2 halfSize, float radius) {
+    float2 q = abs(point) - halfSize + radius;
+    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+}
+
+fragment float4 overlay_background_fragment(float4 position [[position]],
+                                             constant BackgroundUniforms &u [[buffer(0)]]) {
+    float2 pixel = position.xy;
+    float2 uv = pixel / u.resolution;
+    float2 aspect = float2(u.resolution.x / u.resolution.y, 1.0);
+    float intro = smoothstep(0.0, 1.0, u.intro);
+
+    float3 color = float3(0.004, 0.006, 0.010);
+    float vignette = smoothstep(1.15, 0.05, length((uv - 0.5) * aspect));
+    color += float3(0.008, 0.018, 0.032) * vignette;
+
+    float2 orbA = float2(0.31 + 0.05 * sin(u.time * 0.23), 0.28 + 0.04 * cos(u.time * 0.19));
+    float distanceA = length((uv - orbA) * aspect);
+    color += float3(0.02, 0.16, 0.27) * 0.30 / (1.0 + distanceA * distanceA * 12.0);
+
+    float2 orbB = float2(0.74 + 0.04 * cos(u.time * 0.17), 0.70 + 0.03 * sin(u.time * 0.21));
+    float distanceB = length((uv - orbB) * aspect);
+    color += float3(0.16, 0.06, 0.32) * 0.22 / (1.0 + distanceB * distanceB * 14.0);
+
+    float2 local = pixel - u.cardCenter;
+    float sdf = roundedBoxSDF(local, u.cardHalfSize, 30.0);
+    float card = 1.0 - smoothstep(-1.0, 1.0, sdf);
+    float shadow = exp(-max(sdf, 0.0) / 34.0) * 0.55;
+    color *= 1.0 - shadow * (1.0 - card);
+
+    float3 cardColor = mix(float3(0.030, 0.039, 0.064), float3(0.050, 0.061, 0.092), uv.y);
+    color = mix(color, cardColor, card * 0.94 * (0.35 + 0.65 * intro));
+
+    float borderDistance = abs(sdf + 0.75);
+    float border = (1.0 - smoothstep(0.0, 1.8, borderDistance)) * card;
+    color += float3(0.20, 0.33, 0.52) * border * 0.18;
+
+    float topY = u.cardCenter.y - u.cardHalfSize.y;
+    float accentFalloff = smoothstep(1.0, 0.15, abs(local.x) / u.cardHalfSize.x);
+    float accentY = exp(-pow((pixel.y - topY) / 2.3, 2.0));
+    float shimmer = 0.65 + 0.35 * sin(pixel.x * 0.012 - u.time * 0.9);
+    color += float3(0.12, 0.55, 0.78) * accentFalloff * accentY * shimmer * 0.30 * card * intro;
+
+    float noise = fract(sin(dot(pixel, float2(12.9898, 78.233))) * 43758.5453) - 0.5;
+    color += noise / 255.0;
+
+    float alpha = 0.90 + 0.10 * card;
+    return float4(color, alpha * (0.55 + 0.45 * intro));
+}
+
+struct TextOut {
+    float4 position [[position]];
+    float2 texCoord;
+};
+
+vertex TextOut overlay_text_vertex(uint vertexID [[vertex_id]],
+                                   const device TextVertex *vertices [[buffer(0)]],
+                                   constant TextUniforms &u [[buffer(1)]]) {
+    TextVertex v = vertices[vertexID];
+    TextOut out;
+    float2 ndc = float2(v.position.x / u.resolution.x * 2.0 - 1.0,
+                        1.0 - v.position.y / u.resolution.y * 2.0);
+    out.position = float4(ndc, 0.0, 1.0);
+    out.texCoord = v.texCoord;
+    return out;
+}
+
+fragment float4 overlay_text_fragment(TextOut in [[stage_in]],
+                                      texture2d<float> texture [[texture(0)]],
+                                      constant TextUniforms &u [[buffer(1)]]) {
+    constexpr sampler textureSampler(coord::normalized,
+                                     filter::linear,
+                                     address::clamp_to_edge);
+    float4 sample = texture.sample(textureSampler, in.texCoord);
+    // Text textures are premultiplied; scaling all four channels preserves that.
+    return sample * u.color;
+}
+
+struct IconUniforms {
+    float2 resolution;
+    float4 tint;
+    float4 shape;
+};
+
+struct IconOut {
+    float4 position [[position]];
+    float2 texCoord;
+};
+
+vertex IconOut overlay_icon_vertex(uint vertexID [[vertex_id]],
+                                   const device TextVertex *vertices [[buffer(0)]],
+                                   constant IconUniforms &u [[buffer(1)]]) {
+    TextVertex v = vertices[vertexID];
+    IconOut out;
+    float2 ndc = float2(v.position.x / u.resolution.x * 2.0 - 1.0,
+                        1.0 - v.position.y / u.resolution.y * 2.0);
+    out.position = float4(ndc, 0.0, 1.0);
+    out.texCoord = v.texCoord;
+    return out;
+}
+
+fragment float4 overlay_icon_fragment(IconOut in [[stage_in]],
+                                      texture2d<float> texture [[texture(0)]],
+                                      constant IconUniforms &u [[buffer(1)]]) {
+    constexpr sampler textureSampler(coord::normalized,
+                                     filter::linear,
+                                     address::clamp_to_edge);
+
+    // shape = (brightness, cornerRadiusNormalizedToHalfHeight, aspect, unused)
+    float aspect = max(u.shape.z, 0.001);
+    float radius = clamp(u.shape.y, 0.0, min(aspect, 1.0) - 0.001);
+    float2 halfSize = float2(aspect, 1.0);
+    float2 point = (in.texCoord * 2.0 - 1.0) * float2(aspect, 1.0);
+    float2 q = abs(point) - (halfSize - radius);
+    float distance = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+    float aa = max(fwidth(distance), 0.0001);
+    float mask = 1.0 - smoothstep(0.0, aa, distance);
+
+    float4 sample = texture.sample(textureSampler, in.texCoord);
+    sample.rgb *= u.shape.x;
+    sample *= u.tint;
+    return sample * mask;
+}

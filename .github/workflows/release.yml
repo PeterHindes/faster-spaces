@@ -1,0 +1,409 @@
+name: Release
+
+# Cut a release by bumping AppInfo.version and both Info.plist version keys,
+# pushing main, then pushing a matching tag:
+#
+#   git tag v2.1.2
+#   git push origin main
+#   git push origin v2.1.2
+#
+# The tag must match the bundle version. The workflow builds the arm64 app,
+# runs the self-test, publishes Faster-Spaces.zip + its SHA-256 to a GitHub
+# Release, points the Pages download at that exact release, and requests a
+# Pages rebuild.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag (for example v2.1.2). Leave empty to release the version on the selected branch."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build arm64 app
+    # Xcode 27 / macOS 27 arm64. This is the platform the release is verified
+    # on; macos-26 can be substituted if the preview runner is unavailable.
+    runs-on: xcode-27
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      commit: ${{ steps.meta.outputs.commit }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve tag and version
+        id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="${INPUT_TAG:-}"
+          else
+            tag="$REF_NAME"
+          fi
+
+          version="$(plutil -extract CFBundleShortVersionString raw Resources/Info.plist)"
+          app_version="$(sed -n 's/.*static let version = "\([^"]*\)".*/\1/p' Sources/FasterSpaces/AppInfo.swift)"
+
+          if [ -z "$tag" ]; then
+            tag="v$version"
+          fi
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Release tag must look like vX.Y.Z (got '$tag')."
+            exit 1
+          fi
+          case "$tag" in
+            "v$version"|"v$version"-*) ;;
+            *)
+              echo "::error::Tag '$tag' does not match Info.plist CFBundleShortVersionString '$version'. Bump the version before tagging."
+              exit 1
+              ;;
+          esac
+          if [ "$app_version" != "$version" ]; then
+            echo "::error::AppInfo.version '$app_version' does not match Info.plist '$version'."
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Releasing $tag from $(git rev-parse --short HEAD)"
+
+      - name: Import signing identity (optional)
+        env:
+          SIGNING_P12_BASE64: ${{ secrets.FASTERSPACES_SIGNING_P12 }}
+          SIGNING_P12_PASSWORD: ${{ secrets.FASTERSPACES_SIGNING_P12_PASSWORD }}
+          SIGNING_IDENTITY: ${{ secrets.FASTERSPACES_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SIGNING_P12_BASE64:-}" ]; then
+            echo "::warning::FASTERSPACES_SIGNING_P12 is not set; this build will be ad-hoc signed, so users must re-grant Accessibility after updating."
+            exit 0
+          fi
+          if [ -z "${SIGNING_P12_PASSWORD:-}" ]; then
+            echo "::error::FASTERSPACES_SIGNING_P12 is set but FASTERSPACES_SIGNING_P12_PASSWORD is empty."
+            exit 1
+          fi
+
+          keychain="$RUNNER_TEMP/fasterspaces-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          printf '%s' "$SIGNING_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security import "$RUNNER_TEMP/signing.p12" \
+            -k "$keychain" -P "$SIGNING_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" \
+            $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/signing.p12"
+
+          echo "FASTERSPACES_SIGN_IDENTITY=${SIGNING_IDENTITY:-Faster Spaces Development}" >> "$GITHUB_ENV"
+          echo "FASTERSPACES_SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          uname -m
+          swiftc --version
+          xcodebuild -version
+
+      - name: Build app bundle
+        run: ./scripts/build.sh
+
+      - name: Run self-test
+        run: '"dist/Faster Spaces.app/Contents/MacOS/FasterSpaces" --self-test'
+
+      - name: Verify bundle
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          APP="dist/Faster Spaces.app"
+          BIN="$APP/Contents/MacOS/FasterSpaces"
+
+          plutil -lint "$APP/Contents/Info.plist" >/dev/null
+          test "$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")" = "$VERSION"
+          test "$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")" = "$VERSION"
+          file "$BIN" | grep -q "arm64"
+          codesign --verify --strict --verbose=2 "$APP"
+          "$BIN" --version
+
+      - name: Package release artifact
+        id: package
+        run: |
+          set -euo pipefail
+          rm -rf dist/release
+          mkdir -p dist/release
+
+          ditto -c -k --norsrc --keepParent \
+            "dist/Faster Spaces.app" "dist/release/Faster-Spaces.zip"
+          (
+            cd dist/release
+            shasum -a 256 Faster-Spaces.zip \
+              | awk '{print $1"  Faster-Spaces.zip"}' > Faster-Spaces.zip.sha256
+          )
+
+          sha="$(awk '{print $1}' dist/release/Faster-Spaces.zip.sha256)"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "SHA-256: $sha"
+          unzip -l dist/release/Faster-Spaces.zip
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: faster-spaces-release
+          path: |
+            dist/release/Faster-Spaces.zip
+            dist/release/Faster-Spaces.zip.sha256
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    if: github.repository == 'PeterHindes/faster-spaces'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          fetch-depth: 0
+
+      - name: Download workflow artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: faster-spaces-release
+          path: dist/release
+
+      - name: Compose release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+          COMMIT: ${{ needs.build.outputs.commit }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          notes="$RUNNER_TEMP/release-notes.md"
+
+          if [ -f "release-notes/$VERSION.md" ]; then
+            change_notes="$(cat "release-notes/$VERSION.md")"
+          else
+            change_notes="$(gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+              -f tag_name="$TAG" \
+              -f target_commitish="$COMMIT" \
+              --jq .body 2>/dev/null || true)"
+            if [ -z "$change_notes" ]; then
+              base="$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)"
+              if [ -n "$base" ]; then
+                change_notes="$(git log --no-merges --pretty='- %s (%h)' "$base..$TAG")"
+              else
+                change_notes="$(git log --no-merges -20 --pretty='- %s (%h)' "$TAG")"
+              fi
+            fi
+          fi
+
+          {
+            printf '## Faster Spaces %s\n\n' "$VERSION"
+            printf '**Spaces and windows, without the slide.**\n\n'
+            printf '<a href="https://peterhindes.github.io/faster-spaces/"><img src="https://peterhindes.github.io/faster-spaces/settings.png" width="420" alt="Faster Spaces settings"></a>\n\n'
+            printf "### What's new\n\n"
+            printf '%s\n\n' "$change_notes"
+            printf '%s\n' '### Install'
+            printf '%s\n' '1. Download `Faster-Spaces.zip`, unzip it, and drag **Faster Spaces.app** to `/Applications`.'
+            printf '%s\n' '2. The release is self-signed, not notarized. On first launch, right-click the app and choose **Open**, or clear the quarantine flag:'
+            printf '\n'
+            printf '%s\n' '   ```sh'
+            printf '%s\n' '   xattr -dr com.apple.quarantine "/Applications/Faster Spaces.app"'
+            printf '%s\n' '   ```'
+            printf '\n'
+            printf '%s\n' '3. Open Faster Spaces and follow onboarding: grant **Accessibility**, optionally grant **Screen Recording** for window thumbnails, then choose the gesture and optional features.'
+            printf '\n'
+            printf '**SHA-256:** `%s`\n\n' "$SHA256"
+            printf 'The release is **Apple Silicon (arm64)**, built and tested on macOS 27.0.1. Requires macOS 13+.\n\n'
+            printf '[Website](https://peterhindes.github.io/faster-spaces/) · [Source](https://github.com/PeterHindes/faster-spaces) · MIT licensed.\n'
+          } > "$notes"
+
+          cat "$notes"
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+          COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          set -euo pipefail
+          notes="$RUNNER_TEMP/release-notes.md"
+          assets=(dist/release/Faster-Spaces.zip dist/release/Faster-Spaces.zip.sha256)
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --title "Faster Spaces $VERSION" \
+              --notes-file "$notes" \
+              --latest
+            gh release upload "$TAG" "${assets[@]}" --clobber
+          else
+            args=(
+              --title "Faster Spaces $VERSION"
+              --notes-file "$notes"
+              --latest
+            )
+            # A tag pushed by the maintainer already exists; a manual dispatch
+            # may be creating it for the first time.
+            if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+              args+=(--target "$COMMIT")
+            fi
+            gh release create "$TAG" "${args[@]}" "${assets[@]}"
+          fi
+
+          {
+            echo "### Faster Spaces $VERSION"
+            echo
+            echo "- Tag: [\`$TAG\`](https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG)"
+            echo "- SHA-256: \`${{ needs.build.outputs.sha256 }}\`"
+            echo "- Pages: https://peterhindes.github.io/faster-spaces/"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  pages:
+    name: Update download on Pages
+    needs: [build, release]
+    if: github.repository == 'PeterHindes/faster-spaces'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Point the site at the release
+        id: update
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+
+          current="$(sed -n 's/.*data-release-version[^>]*>\([^<]*\)<.*/\1/p' docs/index.html | head -n 1)"
+          if [ -n "$current" ] && [ "$current" != "$VERSION" ]; then
+            newest="$(printf '%s\n%s\n' "$current" "$VERSION" | sort -V | tail -n 1)"
+            if [ "$newest" != "$VERSION" ]; then
+              echo "::warning::Site already advertises $current, newer than $VERSION; leaving it alone."
+              exit 0
+            fi
+          fi
+
+          python3 scripts/update-site-release.py --version "$VERSION" --tag "$TAG"
+
+          # Pages branch builds run Jekyll unless this marker is present. It is
+          # tracked, but restore it rather than let a release silently switch
+          # the site to a slow Jekyll build.
+          if [ ! -f docs/.nojekyll ]; then
+            : > docs/.nojekyll
+            echo "Restored docs/.nojekyll"
+          fi
+
+          git diff -- docs/index.html
+          if [ -n "$(git status --porcelain -- docs/index.html docs/.nojekyll)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit site update
+        if: steps.update.outputs.changed == 'true'
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html docs/.nojekyll
+          git commit -m "Site: download $TAG"
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Could not push the site update after 3 attempts."
+              exit 1
+            fi
+            git pull --rebase origin main
+          done
+
+      - name: Request Pages rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANGED: ${{ steps.update.outputs.changed }}
+        run: |
+          set -euo pipefail
+          target="$(git rev-parse HEAD)"
+
+          if ! gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds" >/dev/null; then
+            echo "::warning::Could not request a Pages build; the push to main may still rebuild the site."
+          fi
+
+          # With no new commit there is no build to wait for; this still
+          # retries a Pages build that failed on an earlier run.
+          if [ "$CHANGED" != "true" ]; then
+            echo "Site already points at this release; requested a fresh Pages build."
+            exit 0
+          fi
+
+          for _ in $(seq 1 24); do
+            read -r build_sha build_status < <(
+              gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" \
+                --jq '"\(.commit) \(.status)"' 2>/dev/null || echo "unknown unknown"
+            )
+            if [ "$build_sha" = "$target" ]; then
+              case "$build_status" in
+                built)
+                  echo "Pages build complete: https://peterhindes.github.io/faster-spaces/"
+                  exit 0
+                  ;;
+                errored)
+                  echo "::error::The Pages build for $target failed."
+                  exit 1
+                  ;;
+              esac
+            fi
+            sleep 10
+          done
+
+          echo "::warning::Pages build did not finish within 4 minutes; check the Pages deployment."

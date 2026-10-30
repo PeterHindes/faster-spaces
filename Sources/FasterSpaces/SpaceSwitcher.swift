@@ -267,6 +267,27 @@ final class SpaceSwitcher {
         switchBy(steps: 1, direction: direction, reason: reason) > 0
     }
 
+    /// Jump directly to a managed Space by ID (used by Option-backtick's
+    /// "return to the previous Space"). The synthetic gesture still steps
+    /// through the intervening Spaces because the Dock animates a multi-step
+    /// gesture; the request is instant either way.
+    @discardableResult
+    func switchToSpaceID(_ id: UInt64, reason: String = "") -> Bool {
+        guard let snapshot = snapshot() else {
+            Log.error("Cannot read Spaces; targeted switch ignored")
+            return false
+        }
+        let current = logicalCurrentIndex(for: snapshot)
+        guard let target = snapshot.display.spaces.firstIndex(where: { $0.id == id }),
+              target != current else {
+            Log.debug("Target Space is already current; no switch")
+            return false
+        }
+        let direction = target > current ? 1 : -1
+        let steps = abs(target - current)
+        return switchBy(steps: steps, direction: direction, reason: reason) > 0
+    }
+
     /// Forget any prediction. Called when the real state catches up or a
     /// display reconfiguration invalidates the cached indexes.
     func resetPrediction() {
@@ -526,4 +547,125 @@ extension Notification.Name {
     static let fasterSpacesStatusDidChange = Notification.Name("FasterSpacesStatusDidChange")
     static let fasterSpacesLogDidChange = Notification.Name("FasterSpacesLogDidChange")
     static let fasterSpacesShowDiagnostics = Notification.Name("FasterSpacesShowDiagnostics")
+    static let fasterSpacesPickDockApp = Notification.Name("FasterSpacesPickDockApp")
+    static let fasterSpacesShowOnboarding = Notification.Name("FasterSpacesShowOnboarding")
+    static let fasterSpacesScreenCaptureDidBecomeGranted = Notification.Name("FasterSpacesScreenCaptureDidBecomeGranted")
+    static let fasterSpacesRestartForScreenCapture = Notification.Name("FasterSpacesRestartForScreenCapture")
+}
+
+
+// MARK: - Previous-Space history
+
+/// Per-display Space history for the Option-backtick shortcut. macOS exposes
+/// no "previous Space" API, so we watch the managed-display snapshot and
+/// remember the Space that was current before the latest change.
+final class SpaceHistory {
+    static let shared = SpaceHistory()
+
+    private struct State {
+        var current: UInt64
+        var previous: UInt64?
+    }
+
+    private var states: [String: State] = [:]
+    private var timer: Timer?
+    private var observer: NSObjectProtocol?
+    private var isSwitching = false
+
+    private init() {}
+
+    func start() {
+        guard timer == nil else { return }
+        refresh()
+
+        let timer = Timer(timeInterval: 0.75, repeats: true) { [weak self] _ in
+            self?.refresh()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+
+        observer = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                self?.refresh()
+            }
+        }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        if let observer {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            self.observer = nil
+        }
+        states.removeAll()
+    }
+
+    /// Call immediately before an activation that may make macOS follow a
+    /// window to another Space. Keeps the current Space as the return target
+    /// even if the user presses Option-backtick before the next poll.
+    func noteSpaceBeforeActivation() {
+        guard !isSwitching, let snapshot = SpaceSwitcher.shared.snapshot() else { return }
+        let display = snapshot.display
+        if let current = display.currentSpace?.id {
+            states[display.identifier] = State(current: current, previous: current)
+        }
+    }
+
+    func switchToPreviousSpace() {
+        guard !isSwitching else { return }
+        refresh()
+        guard let snapshot = SpaceSwitcher.shared.snapshot() else { return }
+        let display = snapshot.display
+        guard let currentID = display.currentSpace?.id,
+              let currentIndex = display.spaces.firstIndex(where: { $0.id == currentID })
+        else {
+            return
+        }
+
+        var targetID = states[display.identifier]?.previous
+        if targetID == nil || targetID == currentID {
+            if currentIndex > 0 {
+                targetID = display.spaces[currentIndex - 1].id
+            } else if display.spaces.count > 1 {
+                targetID = display.spaces[currentIndex + 1].id
+            }
+        }
+
+        guard let targetID, targetID != currentID else {
+            Log.debug("No previous Space to return to")
+            return
+        }
+
+        isSwitching = true
+        let switched = SpaceSwitcher.shared.switchToSpaceID(targetID, reason: "previous space")
+        states[display.identifier] = State(current: targetID, previous: currentID)
+        isSwitching = false
+        if switched {
+            Log.info("Returned to previous Space")
+        } else {
+            Log.error("Could not return to previous Space")
+        }
+    }
+
+    private func refresh() {
+        guard !isSwitching, let snapshot = SpaceSwitcher.shared.snapshot() else { return }
+        var live = Set<String>()
+        for display in snapshot.allDisplays {
+            live.insert(display.identifier)
+            guard let current = display.currentSpace?.id else { continue }
+            if let old = states[display.identifier] {
+                if old.current != current {
+                    states[display.identifier] = State(current: current, previous: old.current)
+                }
+            } else {
+                states[display.identifier] = State(current: current, previous: nil)
+            }
+        }
+        states = states.filter { live.contains($0.key) }
+    }
 }
